@@ -1,0 +1,143 @@
+{
+  "entities": {
+    "users": {
+      "fields": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string" },
+        "assignedShelter": { "type": "string", "optional": true },
+        "assignedArea": { "type": "string", "optional": true },
+        "avatarUrl": { "type": "string", "optional": true },
+        "phone": { "type": "string", "optional": true },
+        "status": { "type": "string" },
+        "joinedDate": { "type": "string", "optional": true },
+        "notes": { "type": "string", "optional": true },
+        "resignationReason": { "type": "string", "optional": true }
+      }
+    },
+    "children": {
+      "fields": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "nickname": { "type": "string", "optional": true },
+        "gender": { "type": "string" },
+        "dateOfBirth": { "type": "string", "optional": true },
+        "estimatedAge": { "type": "number" },
+        "nationality": { "type": "string" },
+        "addressIfKnown": { "type": "string", "optional": true },
+        "photoUrl": { "type": "string", "optional": true },
+        "rescuePhotoUrl": { "type": "string", "optional": true },
+        "identificationInfo": { "type": "string", "optional": true },
+        "disabilityOrSpecialNeeds": { "type": "string", "optional": true },
+        "educationInformation": { "type": "string", "optional": true },
+        "otherImportantInfo": { "type": "string", "optional": true },
+        "rescueDate": { "type": "string" },
+        "rescueTime": { "type": "string", "optional": true },
+        "rescueLocation": { "type": "string" },
+        "area": { "type": "string" },
+        "rescueTeam": { "type": "string", "optional": true },
+        "rescuedBy": { "type": "string" },
+        "reasonForRescue": { "type": "string" },
+        "conditionAtRescue": { "type": "string", "optional": true },
+        "immediateProtectionNeeds": { "type": "string", "optional": true },
+        "policeInvolvement": { "type": "boolean" },
+        "gdNumber": { "type": "string", "optional": true },
+        "gdDate": { "type": "string", "optional": true },
+        "policeStation": { "type": "string", "optional": true },
+        "shelterName": { "type": "string" },
+        "shelterAdmissionDate": { "type": "string", "optional": true },
+        "roomOrBed": { "type": "string", "optional": true },
+        "assignedCaseWorker": { "type": "string" },
+        "caseWorkerPhone": { "type": "string", "optional": true },
+        "caseStatus": { "type": "string" },
+        "currentShelterStatus": { "type": "string" },
+        "timeline": { "type": "array" },
+        "caseNotes": { "type": "array" }
+      }
+    },
+    "susSessions": {
+      "fields": {
+        "id": { "type": "string" },
+        "date": { "type": "string" },
+        "area": { "type": "string" },
+        "facilitatorName": { "type": "string", "optional": true },
+        "coFacilitatorName": { "type": "string", "optional": true },
+        "facilitator": { "type": "string", "optional": true },
+        "coFacilitator": { "type": "string", "optional": true },
+        "boysCount": { "type": "number" },
+        "girlsCount": { "type": "number" },
+        "totalChildrenPresent": { "type": "number", "optional": true },
+        "totalAttendance": { "type": "number", "optional": true },
+        "activityType": { "type": "string", "optional": true },
+        "activityCategory": { "type": "string", "optional": true },
+        "topicsCovered": { "type": "string" },
+        "mealProvided": { "type": "boolean", "optional": true },
+        "mealsServed": { "type": "string", "optional": true },
+        "mealDescription": { "type": "string", "optional": true },
+        "mealExpenseBdt": { "type": "number", "optional": true },
+        "mealCost": { "type": "number", "optional": true },
+        "vendorName": { "type": "string", "optional": true },
+        "billVoucherNumber": { "type": "string", "optional": true },
+        "voucherNumber": { "type": "string", "optional": true },
+        "billReceiptUrl": { "type": "string", "optional": true },
+        "billVoucherUrl": { "type": "string", "optional": true },
+        "sessionPhotoUrl": { "type": "string", "optional": true },
+        "vulnerableChildrenIdentified": { "type": "number", "optional": true },
+        "rescueReferralNotes": { "type": "string", "optional": true },
+        "createdAt": { "type": "string" },
+        "createdBy": { "type": "string", "optional": true }
+      }
+    },
+    "shelters": {
+      "fields": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "capacity": { "type": "number" },
+        "location": { "type": "string" },
+        "inCharge": { "type": "string" },
+        "phone": { "type": "string" },
+        "establishedDate": { "type": "string" },
+        "isLongTerm": { "type": "boolean" },
+        "maxAge": { "type": "number" },
+        "description": { "type": "string" }
+      }
+    },
+    "auditLogs": {
+      "fields": {
+        "id": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "user": { "type": "string" },
+        "role": { "type": "string" },
+        "action": { "type": "string" },
+        "childId": { "type": "string", "optional": true },
+        "details": { "type": "string" }
+      }
+    },
+    "vocationalStudents": {
+      "fields": {
+        "id": { "type": "string" },
+        "admissionNumber": { "type": "string" },
+        "name": { "type": "string" },
+        "banglaName": { "type": "string", "optional": true },
+        "gender": { "type": "string" },
+        "age": { "type": "number" },
+        "phone": { "type": "string", "optional": true },
+        "guardianName": { "type": "string", "optional": true },
+        "guardianPhone": { "type": "string", "optional": true },
+        "residentialAddress": { "type": "string" },
+        "livingCondition": { "type": "string" },
+        "trade": { "type": "string" },
+        "centerLocation": { "type": "string" },
+        "admissionDate": { "type": "string" },
+        "batchNumber": { "type": "string" },
+        "assignedInstructor": { "type": "string" },
+        "progressLevel": { "type": "string" },
+        "attendanceRatePercent": { "type": "number" },
+        "status": { "type": "string" },
+        "notes": { "type": "string", "optional": true },
+        "createdAt": { "type": "string" }
+      }
+    }
+  }
+}

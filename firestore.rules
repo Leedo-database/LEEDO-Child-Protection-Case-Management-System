@@ -1,0 +1,10 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // LEEDO Child Protection, Rescue & Case Management System
+    // Collections: users, children, susSessions, shelters, auditLogs
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
