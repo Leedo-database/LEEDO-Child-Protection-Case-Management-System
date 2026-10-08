@@ -5,6 +5,7 @@ export type UserRole =
   | 'Field Officer / Case Worker' 
   | 'Shelter Staff'
   | 'Peace Home Staff'
+  | 'Rescue Worker / SUS Staff'
   | 'Rescue Worker / Outpost Staff';
 
 export type Gender = 'Male' | 'Female' | 'Other';
@@ -12,6 +13,17 @@ export type Gender = 'Male' | 'Female' | 'Other';
 export type StaffStatus = 'Active' | 'Resigned / Terminated' | 'On Leave';
 
 export type OutpostArea = 
+  | 'Airport SUS' 
+  | 'Mirpur SUS' 
+  | 'Tejgaon SUS' 
+  | 'Rayerbazar SUS' 
+  | 'Kamalapur SUS' 
+  | 'Kamalapur Shelter'
+  | 'Sadarghat SUS' 
+  | 'Shambazar SUS'
+  | 'Kadamtali Shelter'
+  | 'Vocational'
+  | 'LEEDO Peace Home'
   | 'Airport' 
   | 'Mirpur' 
   | 'Tejgaon' 
@@ -23,6 +35,16 @@ export type OutpostArea =
   | 'All';
 
 export type RescueArea = 
+  | 'Airport SUS' 
+  | 'Mirpur SUS' 
+  | 'Tejgaon SUS' 
+  | 'Rayerbazar SUS' 
+  | 'Kamalapur SUS' 
+  | 'Kamalapur Shelter'
+  | 'Sadarghat SUS' 
+  | 'Shambazar SUS'
+  | 'Kadamtali Shelter'
+  | 'Vocational'
   | 'Airport' 
   | 'Mirpur' 
   | 'Tejgaon' 
@@ -49,7 +71,8 @@ export interface User {
   designation?: string;
   department?: string;
   assignedShelter?: 'Kamalapur Shelter' | 'Kadamtali Shelter' | 'LEEDO Peace Home' | 'All' | string;
-  assignedArea?: string; // e.g. 'Airport', 'Mirpur', 'Tejgaon', 'Rayerbazar', 'Kamalapur', etc.
+  assignedArea?: string; // primary assigned area or comma-joined areas
+  assignedAreas?: string[]; // Multiple assigned areas support: e.g. ['Airport SUS', 'Kamalapur SUS']
   avatarUrl?: string;
   phone?: string;
   password?: string; // Secret staff password (default: 123456)

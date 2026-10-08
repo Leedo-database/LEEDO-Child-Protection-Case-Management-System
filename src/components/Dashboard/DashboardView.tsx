@@ -22,6 +22,7 @@ import {
 import { useApp } from '../../context/AppContext';
 import { getDaysInShelter, getSixWeekAlertStatus, getHealthAlert, getCounselingAlert, getNextPendingFollowUp } from '../../utils/calculations';
 import { Child } from '../../types';
+import { canUserAccessShelter } from '../../utils/areaPermissions';
 
 export const DashboardView: React.FC = () => {
   const { 
@@ -375,83 +376,90 @@ export const DashboardView: React.FC = () => {
         </div>
       </div>
 
-      {/* THREE LEEDO SHELTERS & PEACE HOME OVERVIEW (Kamalapur: 30, Kadamtali: 30, Peace Home: 100) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {shelters.map((shelter) => {
-          const shelterChildren = children.filter(c => !c.isArchived && c.shelterName === shelter.name && c.currentShelterStatus === 'Active Resident');
-          const over6Wk = shelterChildren.filter(c => getSixWeekAlertStatus(c).status === 'exceeded');
-          const healthDue = shelterChildren.filter(c => getHealthAlert(c)?.isDue);
-          const counselingDue = shelterChildren.filter(c => getCounselingAlert(c)?.isDue);
-          const occupancyRate = Math.round((shelterChildren.length / shelter.capacity) * 100);
+      {/* LEEDO SHELTERS & PEACE HOME OVERVIEW (Filtered by Staff Hub Permissions) */}
+      {(() => {
+        const visibleShelters = shelters.filter((s) => canUserAccessShelter(currentUser, s.name));
+        if (visibleShelters.length === 0) return null;
 
-          return (
-            <div key={shelter.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs flex flex-col justify-between">
-              <div>
-                <div className="flex items-start justify-between gap-2">
+        return (
+          <div className={`grid grid-cols-1 ${visibleShelters.length === 1 ? 'lg:grid-cols-1' : visibleShelters.length === 2 ? 'lg:grid-cols-2' : 'lg:grid-cols-3'} gap-4`}>
+            {visibleShelters.map((shelter) => {
+              const shelterChildren = children.filter(c => !c.isArchived && c.shelterName === shelter.name && c.currentShelterStatus === 'Active Resident');
+              const over6Wk = shelterChildren.filter(c => getSixWeekAlertStatus(c).status === 'exceeded');
+              const healthDue = shelterChildren.filter(c => getHealthAlert(c)?.isDue);
+              const counselingDue = shelterChildren.filter(c => getCounselingAlert(c)?.isDue);
+              const occupancyRate = Math.round((shelterChildren.length / shelter.capacity) * 100);
+
+              return (
+                <div key={shelter.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs flex flex-col justify-between">
                   <div>
-                    <div className="flex items-center gap-2">
-                      <Building className="w-5 h-5 text-rose-600 shrink-0" />
-                      <h3 className="font-bold text-base text-slate-900 font-display leading-tight">{shelter.name}</h3>
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <Building className="w-5 h-5 text-rose-600 shrink-0" />
+                          <h3 className="font-bold text-base text-slate-900 font-display leading-tight">{shelter.name}</h3>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-1">{shelter.location}</p>
+                      </div>
+                      <span className="text-[11px] font-semibold px-2 py-0.5 bg-slate-100 text-slate-700 rounded shrink-0">
+                        {language === 'bn' ? 'দায়িত্বপ্রাপ্ত' : 'In-charge'}: {shelter.inCharge}
+                      </span>
                     </div>
-                    <p className="text-xs text-slate-500 mt-1">{shelter.location}</p>
-                  </div>
-                  <span className="text-[11px] font-semibold px-2 py-0.5 bg-slate-100 text-slate-700 rounded shrink-0">
-                    {language === 'bn' ? 'দায়িত্বপ্রাপ্ত' : 'In-charge'}: {shelter.inCharge}
-                  </span>
-                </div>
 
-                {/* Capacity Bar with exact capacity (30 / 30 / 100) */}
-                <div className="mt-4">
-                  <div className="flex justify-between text-xs mb-1.5 font-medium">
-                    <span className="text-slate-600">
-                      {language === 'bn' ? 'বর্তমান ধারণ' : 'Current Occupancy'}: <strong>{shelterChildren.length} / {shelter.capacity}</strong> {language === 'bn' ? 'বেড' : 'Beds'}
-                    </span>
-                    <span className={occupancyRate > 90 ? 'text-rose-600 font-bold' : 'text-slate-600'}>
-                      {occupancyRate}% {language === 'bn' ? 'পূর্ণ' : 'Full'}
-                    </span>
+                    {/* Capacity Bar with exact capacity (30 / 30 / 100) */}
+                    <div className="mt-4">
+                      <div className="flex justify-between text-xs mb-1.5 font-medium">
+                        <span className="text-slate-600">
+                          {language === 'bn' ? 'বর্তমান ধারণ' : 'Current Occupancy'}: <strong>{shelterChildren.length} / {shelter.capacity}</strong> {language === 'bn' ? 'বেড' : 'Beds'}
+                        </span>
+                        <span className={occupancyRate > 90 ? 'text-rose-600 font-bold' : 'text-slate-600'}>
+                          {occupancyRate}% {language === 'bn' ? 'পূর্ণ' : 'Full'}
+                        </span>
+                      </div>
+                      <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                        <div 
+                          className={`h-full rounded-full transition-all duration-500 ${occupancyRate > 85 ? 'bg-rose-500' : 'bg-emerald-500'}`} 
+                          style={{ width: `${Math.min(occupancyRate, 100)}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Sub metrics */}
+                    <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
+                      <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
+                        <div className="font-bold text-slate-900 text-sm">{healthDue.length}</div>
+                        <div className="text-[10px] text-slate-500 mt-0.5">{language === 'bn' ? 'স্বাস্থ্য চেকআপ' : 'Health Due'}</div>
+                      </div>
+                      <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
+                        <div className="font-bold text-slate-900 text-sm">{counselingDue.length}</div>
+                        <div className="text-[10px] text-slate-500 mt-0.5">{language === 'bn' ? 'কাউন্সেলিং' : 'Counseling'}</div>
+                      </div>
+                      <div className={`p-2 rounded-lg border ${
+                        over6Wk.length > 0 ? 'bg-rose-50 border-rose-200 text-rose-900' : 'bg-slate-50 border-slate-100 text-slate-900'
+                      }`}>
+                        <div className="font-bold text-sm">{over6Wk.length}</div>
+                        <div className="text-[10px] mt-0.5">{language === 'bn' ? '> ৬ সপ্তাহ' : '> 6 Wks Stay'}</div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full rounded-full transition-all duration-500 ${occupancyRate > 85 ? 'bg-rose-500' : 'bg-emerald-500'}`} 
-                      style={{ width: `${Math.min(occupancyRate, 100)}%` }}
-                    />
+
+                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                    <span className="text-slate-500 font-mono text-[11px]">{shelter.phone}</span>
+                    <button
+                      onClick={() => {
+                        setActiveView('children');
+                      }}
+                      className="font-semibold text-rose-600 hover:text-rose-700 flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>{language === 'bn' ? 'কেস তালিকা' : 'View cases'}</span> &rarr;
+                    </button>
                   </div>
                 </div>
-
-                {/* Sub metrics */}
-                <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
-                  <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
-                    <div className="font-bold text-slate-900 text-sm">{healthDue.length}</div>
-                    <div className="text-[10px] text-slate-500 mt-0.5">{language === 'bn' ? 'স্বাস্থ্য চেকআপ' : 'Health Due'}</div>
-                  </div>
-                  <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
-                    <div className="font-bold text-slate-900 text-sm">{counselingDue.length}</div>
-                    <div className="text-[10px] text-slate-500 mt-0.5">{language === 'bn' ? 'কাউন্সেলিং' : 'Counseling'}</div>
-                  </div>
-                  <div className={`p-2 rounded-lg border ${
-                    over6Wk.length > 0 ? 'bg-rose-50 border-rose-200 text-rose-900' : 'bg-slate-50 border-slate-100 text-slate-900'
-                  }`}>
-                    <div className="font-bold text-sm">{over6Wk.length}</div>
-                    <div className="text-[10px] mt-0.5">{language === 'bn' ? '> ৬ সপ্তাহ' : '> 6 Wks Stay'}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                <span className="text-slate-500 font-mono text-[11px]">{shelter.phone}</span>
-                <button
-                  onClick={() => {
-                    setActiveView('children');
-                  }}
-                  className="font-semibold text-rose-600 hover:text-rose-700 flex items-center gap-1 cursor-pointer"
-                >
-                  <span>{language === 'bn' ? 'কেস তালিকা' : 'View cases'}</span> &rarr;
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+              );
+            })}
+          </div>
+        );
+      })()}
 
       {/* RECENT RESCUES & ACTIVE CASES TABLE */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">

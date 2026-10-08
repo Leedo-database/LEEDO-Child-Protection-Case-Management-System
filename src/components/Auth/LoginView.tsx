@@ -1058,7 +1058,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
                       onChange={(e) => setReqRole(e.target.value as UserRole)}
                       className="w-full px-3 py-2 border border-slate-300 rounded-xl font-semibold text-slate-800"
                     >
-                      <option value="Rescue Worker / Outpost Staff">Rescue Worker / Outpost Staff (ফিল্ড স্টাফ)</option>
+                      <option value="Rescue Worker / Outpost Staff">Rescue Worker / SUS Staff (ফিল্ড স্টাফ ও এসইউএস)</option>
                       <option value="Field Officer / Case Worker">Field Officer / Case Worker</option>
                       <option value="Shelter Staff">Shelter Staff (শেল্টার স্টাফ - মাদার/কুক)</option>
                       <option value="Peace Home Staff">Peace Home Staff (পিস হোম)</option>
@@ -1077,14 +1077,15 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
                       onChange={(e) => setReqAssignedCenter(e.target.value)}
                       className="w-full px-3 py-2 border border-slate-300 rounded-xl font-semibold text-slate-800"
                     >
-                      <option value="Airport">Airport (বিমানবন্দর)</option>
-                      <option value="Mirpur">Mirpur (মিরপুর)</option>
-                      <option value="Tejgaon">Tejgaon (তেজগাঁও)</option>
-                      <option value="Rayer Bazar">Rayer Bazar (রায়েরবাজার)</option>
-                      <option value="Kamalapur">Kamalapur (কমলাপুর)</option>
-                      <option value="Sadarghat">Sadarghat (সদরঘাট)</option>
-                      <option value="Shambazar">Shambazar (শ্যামবাজার)</option>
+                      <option value="Airport SUS">Airport SUS (বিমানবন্দর)</option>
+                      <option value="Mirpur SUS">Mirpur SUS (মিরপুর)</option>
+                      <option value="Tejgaon SUS">Tejgaon SUS (তেজগাঁও)</option>
+                      <option value="Rayerbazar SUS">Rayerbazar SUS (রায়েরবাজার)</option>
+                      <option value="Kamalapur SUS">Kamalapur SUS (কমলাপুর)</option>
                       <option value="Kamalapur Shelter">Kamalapur Shelter</option>
+                      <option value="Sadarghat SUS">Sadarghat SUS (সদরঘাট)</option>
+                      <option value="Shambazar SUS">Shambazar SUS (শ্যামবাজার)</option>
+                      <option value="Vocational">Vocational (ভোকেশনাল ট্রেড)</option>
                       <option value="Kadamtali Shelter">Kadamtali Shelter</option>
                       <option value="LEEDO Peace Home">LEEDO Peace Home</option>
                       <option value="Head Office">Head Office / Central</option>

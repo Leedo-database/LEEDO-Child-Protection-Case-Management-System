@@ -138,6 +138,14 @@
         "notes": { "type": "string", "optional": true },
         "createdAt": { "type": "string" }
       }
+    },
+    "systemSettings": {
+      "fields": {
+        "id": { "type": "string" },
+        "customLogoUrl": { "type": "string", "optional": true },
+        "updatedAt": { "type": "string" },
+        "updatedBy": { "type": "string", "optional": true }
+      }
     }
   }
 }

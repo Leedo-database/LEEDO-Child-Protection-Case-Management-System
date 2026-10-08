@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   LayoutDashboard, 
   Users, 
@@ -23,10 +23,12 @@ import {
   Compass,
   PhoneCall,
   CheckCircle,
-  X
+  X,
+  UserCog
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { getSixWeekAlertStatus } from '../utils/calculations';
+import { EditProfileModal } from './Auth/EditProfileModal';
 
 interface SidebarProps {
   mobileOpen: boolean;
@@ -49,11 +51,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
     susSessions,
     vtcStudents,
     currentUser,
+    canAccessShelters,
+    canAccessVTC,
     syncDataToFirebase,
     isSyncingFirebase,
     language,
     t
   } = useApp();
+
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
 
   // Count 6-week alerts and pending items
   const childrenOver6Weeks = children.filter((c) => {
@@ -67,8 +73,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: '4r-methodology', label: language === 'bn' ? '৪আর মডেল (রেসকিউ→পুনর্বাসন)' : '4R Model (Rescue→Rebuild)', icon: Compass },
     { id: 'children', label: language === 'bn' ? 'শিশু ও কেস ডিরেক্টরি' : 'Children / Case Directory', icon: Users, badge: children.filter(c => !c.isArchived).length },
     { id: 'sus', label: language === 'bn' ? 'স্কুল আন্ডার দ্য স্কাই (SUS)' : 'School Under the Sky (SUS)', icon: GraduationCap, badge: susSessions.length },
-    { id: 'vtc', label: language === 'bn' ? 'কারিগরি প্রশিক্ষণ কেন্দ্র (VTC)' : 'Vocational Trade Center (VTC)', icon: Briefcase, badge: vtcStudents.length },
-    { id: 'shelters', label: language === 'bn' ? 'শেল্টার ও পিস হোম' : 'Shelters & Peace Home', icon: Building2 },
+    { id: 'vtc', label: language === 'bn' ? 'কারিগরি প্রশিক্ষণ কেন্দ্র (VTC)' : 'Vocational Trade Center (VTC)', icon: Briefcase, badge: vtcStudents.length, hidden: !canAccessVTC },
+    { id: 'shelters', label: language === 'bn' ? 'শেল্টার ও পিস হোম' : 'Shelters & Peace Home', icon: Building2, hidden: !canAccessShelters },
     { id: 'family-tracing', label: language === 'bn' ? 'পরিবার সন্ধান ও যোগাযোগ' : 'Family Tracing', icon: HeartHandshake },
     { id: 'health', label: language === 'bn' ? 'স্বাস্থ্য ব্যবস্থাপনা' : 'Health Management', icon: Activity },
     { id: 'counseling', label: language === 'bn' ? 'কাউন্সেলিং ও মানসিক স্বাস্থ্য' : 'Counseling & Trauma', icon: Smile },
@@ -144,6 +150,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {language === 'bn' ? 'মূল কার্যাবলী' : 'Main Operations'}
           </div>
           {navItems.map((item) => {
+            if (item.hidden) {
+              return null;
+            }
+
             // Check admin permission
             if (item.adminOnly && currentUser.role !== 'Super Admin' && currentUser.role !== 'Head Office Staff') {
               return null;
@@ -244,6 +254,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div className="text-[11px] text-rose-600 font-medium truncate">{currentUser.role}</div>
             </div>
           </div>
+          
+          <button
+            onClick={() => setEditProfileOpen(true)}
+            className="w-full mt-2.5 flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-white hover:bg-rose-50 text-slate-700 hover:text-rose-700 border border-slate-200 hover:border-rose-300 rounded-lg text-[11px] font-semibold transition-all cursor-pointer shadow-2xs"
+            title={language === 'bn' ? 'ব্যক্তিগত প্রোফাইল এডিট (ছবি ও ফোন নম্বর)' : 'Edit Personal Profile'}
+          >
+            <UserCog className="w-3.5 h-3.5 text-[#E31B23]" />
+            <span>{language === 'bn' ? 'প্রোফাইল এডিট (ছবি ও ফোন)' : 'Edit Profile & Photo'}</span>
+          </button>
+
           <div className="text-[10px] text-slate-500 mt-2 flex items-center justify-between">
             <span>LEEDO CPMS v2.6</span>
             <span className="text-emerald-600 font-semibold flex items-center gap-1">
@@ -253,6 +273,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
       </aside>
+
+      {/* Personal Profile Modal */}
+      <EditProfileModal isOpen={editProfileOpen} onClose={() => setEditProfileOpen(false)} />
     </>
   );
 };

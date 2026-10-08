@@ -204,17 +204,17 @@ export const ChildList: React.FC<ChildListProps> = ({
       </div>
 
       {/* Role-Based Location Segregation Indicator */}
-      {currentUser.role === 'Rescue Worker / Outpost Staff' && (
+      {(currentUser.role === 'Rescue Worker / Outpost Staff' || currentUser.role === 'Rescue Worker / SUS Staff') && (
         <div className="bg-amber-50 border border-amber-300 rounded-2xl p-3.5 flex items-start gap-3 shadow-2xs">
           <div className="p-2 bg-amber-100 rounded-xl text-amber-800 shrink-0 mt-0.5">
             <Building2 className="w-4 h-4" />
           </div>
           <div className="text-xs">
             <span className="font-bold text-amber-900 uppercase tracking-wide">
-              {currentUser.assignedArea || 'Outpost'} Rescue Unit Scope:
+              {currentUser.assignedArea || 'SUS'} Rescue Unit Scope:
             </span>
             <p className="text-amber-800 mt-0.5 leading-relaxed">
-              As an outreach rescue worker for <strong>{currentUser.assignedArea || 'your assigned area'}</strong>, your directory displays children rescued from this outpost. You can monitor their assigned transitional shelter (Kamalapur / Kadamtali) or long-term residence (LEEDO Peace Home), current case status, and well-being.
+              As an outreach rescue worker for <strong>{currentUser.assignedArea || 'your assigned area'}</strong>, your directory displays children rescued from this SUS center. You can monitor their assigned transitional shelter (Kamalapur / Kadamtali) or long-term residence (LEEDO Peace Home), current case status, and well-being.
             </p>
           </div>
         </div>
@@ -252,8 +252,8 @@ export const ChildList: React.FC<ChildListProps> = ({
         </div>
       )}
 
-      {/* Super Admin & Head Office Branch Switcher */}
-      {(currentUser.role === 'Super Admin' || currentUser.role === 'Head Office Staff') && (
+      {/* Super Admin, Program Coordinator & Head Office Branch Switcher */}
+      {(currentUser.role === 'Super Admin' || currentUser.role === 'Head Office Staff' || currentUser.role === 'Program Coordinator') && (
         <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-2xs flex flex-wrap items-center gap-2 text-xs">
           <span className="font-bold text-slate-700 mr-1">Facility / Branch View:</span>
           <div className="flex flex-wrap gap-1.5">
@@ -262,10 +262,13 @@ export const ChildList: React.FC<ChildListProps> = ({
               { id: 'Kamalapur Shelter', label: 'Kamalapur Shelter' },
               { id: 'Kadamtali Shelter', label: 'Kadamtali Shelter' },
               { id: 'LEEDO Peace Home', label: 'LEEDO Peace Home (Up to 17y)' },
-              { id: 'Airport', label: 'Airport Outpost' },
-              { id: 'Mirpur', label: 'Mirpur Outpost' },
-              { id: 'Tejgaon', label: 'Tejgaon Outpost' },
-              { id: 'Rayerbazar', label: 'Rayerbazar Outpost' },
+              { id: 'Airport', label: 'Airport SUS' },
+              { id: 'Mirpur', label: 'Mirpur SUS' },
+              { id: 'Tejgaon', label: 'Tejgaon SUS' },
+              { id: 'Rayerbazar', label: 'Rayerbazar SUS' },
+              { id: 'Kamalapur', label: 'Kamalapur SUS' },
+              { id: 'Sadarghat', label: 'Sadarghat SUS' },
+              { id: 'Shambazar', label: 'Shambazar SUS' },
             ].map((branch) => {
               const isActive = branchFilter === branch.id;
               return (

@@ -14,12 +14,14 @@ import {
   AlertTriangle,
   BookOpen,
   Languages,
-  LogOut
+  LogOut,
+  UserCog
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { LeedoLogo } from './LeedoLogo';
 import { UserRole } from '../types';
 import { getSixWeekAlertStatus, getHealthAlert, getCounselingAlert, getNextPendingFollowUp } from '../utils/calculations';
+import { EditProfileModal } from './Auth/EditProfileModal';
 
 interface NavbarProps {
   onOpenMobileMenu: () => void;
@@ -54,6 +56,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
   const [notificationMenuOpen, setNotificationMenuOpen] = useState(false);
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
 
   // Filter staff notifications for current user (e.g. Nargis counseling tasks, Coordinator new rescue verifications)
   const isCounselor = currentUser.id === 'emp-1017' || 
@@ -427,6 +430,16 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
           </div>
 
+          {/* Direct Quick Profile Edit button */}
+          <button
+            onClick={() => setEditProfileOpen(true)}
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:text-[#E31B23] hover:bg-rose-50 rounded-xl border border-slate-200 transition-colors cursor-pointer"
+            title={language === 'bn' ? 'ব্যক্তিগত প্রোফাইল এডিট (ছবি ও ফোন নম্বর)' : 'Edit Personal Profile'}
+          >
+            <UserCog className="w-3.5 h-3.5 text-[#E31B23]" />
+            <span>{language === 'bn' ? 'প্রোফাইল' : 'Profile'}</span>
+          </button>
+
           {/* Logged-in User's Private ID Badge & Profile Card */}
           <div className="relative">
             <button
@@ -503,9 +516,18 @@ export const Navbar: React.FC<NavbarProps> = ({
                   </div>
                 </div>
 
-                {/* Logout Action */}
-                <div className="p-3 bg-white border-t border-slate-200 flex items-center justify-between">
-                  <span className="text-[10px] text-slate-400 font-medium">LEEDO Verified Identity</span>
+                {/* Profile Edit & Logout Actions */}
+                <div className="p-3 bg-white border-t border-slate-200 flex items-center justify-between gap-2">
+                  <button
+                    onClick={() => {
+                      setRoleMenuOpen(false);
+                      setEditProfileOpen(true);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer shadow-2xs"
+                  >
+                    <UserCog className="w-3.5 h-3.5 text-rose-600" />
+                    <span>{language === 'bn' ? 'প্রোফাইল এডিট' : 'Edit Profile'}</span>
+                  </button>
                   {onLogout && (
                     <button
                       onClick={() => {
@@ -515,7 +537,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition-all cursor-pointer shadow-xs"
                     >
                       <LogOut className="w-3.5 h-3.5" />
-                      <span>{language === 'bn' ? 'লগআউট করুন' : 'Log Out'}</span>
+                      <span>{language === 'bn' ? 'লগআউট' : 'Log Out'}</span>
                     </button>
                   )}
                 </div>
@@ -536,6 +558,9 @@ export const Navbar: React.FC<NavbarProps> = ({
           )}
         </div>
       </div>
+
+      {/* Personal Profile Editor Modal */}
+      <EditProfileModal isOpen={editProfileOpen} onClose={() => setEditProfileOpen(false)} />
     </header>
   );
 };

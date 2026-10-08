@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useApp } from '../context/AppContext';
 
 interface LeedoLogoProps {
   className?: string;
   size?: 'sm' | 'md' | 'lg' | 'xl';
   showSubtitle?: boolean;
   variant?: 'vertical' | 'horizontal';
+  customLogoUrl?: string | null;
 }
 
 export const LeedoLogo: React.FC<LeedoLogoProps> = ({
@@ -12,7 +14,19 @@ export const LeedoLogo: React.FC<LeedoLogoProps> = ({
   size = 'md',
   showSubtitle = true,
   variant = 'horizontal',
+  customLogoUrl: customLogoProp,
 }) => {
+  const [imageError, setImageError] = useState(false);
+  let appLogoUrl: string | null = null;
+  try {
+    const appContext = useApp();
+    appLogoUrl = appContext?.customLogoUrl || null;
+  } catch (e) {
+    // If rendered outside AppProvider
+  }
+
+  const effectiveLogoUrl = customLogoProp !== undefined ? customLogoProp : appLogoUrl;
+
   // Brand red colors of LEEDO
   const redColor = '#E31B23';
 
@@ -79,10 +93,26 @@ export const LeedoLogo: React.FC<LeedoLogoProps> = ({
     </svg>
   );
 
+  const LogoVisual = effectiveLogoUrl && !imageError ? (
+    <img
+      src={effectiveLogoUrl}
+      alt="LEEDO Logo"
+      onError={() => setImageError(true)}
+      style={{
+        height: variant === 'vertical' ? currentSize * 1.3 : currentSize,
+        maxHeight: variant === 'vertical' ? 100 : 48,
+        maxWidth: variant === 'vertical' ? 160 : 130,
+      }}
+      className="object-contain shrink-0 rounded-lg drop-shadow-xs transition-transform"
+    />
+  ) : (
+    FiguresSVG
+  );
+
   if (variant === 'vertical') {
     return (
       <div className={`flex flex-col items-center text-center ${className}`}>
-        {FiguresSVG}
+        {LogoVisual}
         <div className="mt-2 tracking-tight">
           <span className="font-extrabold text-2xl md:text-3xl text-[#E31B23] tracking-widest block font-display leading-none">
             LEEDO
@@ -99,7 +129,7 @@ export const LeedoLogo: React.FC<LeedoLogoProps> = ({
 
   return (
     <div className={`flex items-center gap-3 ${className}`}>
-      {FiguresSVG}
+      {LogoVisual}
       <div className="flex flex-col">
         <div className="flex items-center gap-2">
           <span className="font-black text-2xl tracking-wider text-[#E31B23] font-display leading-tight">

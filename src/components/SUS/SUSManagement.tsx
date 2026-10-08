@@ -23,7 +23,7 @@ import { useApp } from '../../context/AppContext';
 import { SUSSession, RescueArea } from '../../types';
 
 export const SUSManagement: React.FC = () => {
-  const { filteredSUSSessions, susSessions, addSUSSession, currentUser } = useApp();
+  const { filteredSUSSessions, susSessions, addSUSSession, currentUser, language } = useApp();
 
   // If user is restricted to an area, default the area filter to that area
   const userArea = currentUser.assignedArea && currentUser.assignedArea !== 'All' ? currentUser.assignedArea : 'all';
@@ -138,7 +138,7 @@ export const SUSManagement: React.FC = () => {
               School Under the Sky (SUS) Daily Tracker
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
-              Outdoor non-formal education, daily nutrition, and street protection monitoring across 7 operational outposts.
+              Outdoor non-formal education, daily nutrition, and street protection monitoring across operational SUS centers.
             </p>
           </div>
 
@@ -151,15 +151,15 @@ export const SUSManagement: React.FC = () => {
           </button>
         </div>
 
-        {/* 7 Outpost Coverage Banner */}
+        {/* SUS Centers Coverage Banner */}
         <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center gap-2 text-xs text-slate-600">
-          <span className="font-bold text-slate-700">7 Active Open-Air Classrooms:</span>
+          <span className="font-bold text-slate-700">Active Open-Air Classrooms (SUS):</span>
           {['Airport', 'Mirpur', 'Tejgaon', 'Rayerbazar', 'Kamalapur', 'Sadarghat', 'Shambazar'].map(hub => (
             <span 
               key={hub}
               className="px-2.5 py-0.5 bg-slate-100 border border-slate-200 text-slate-700 rounded-full font-medium text-[11px]"
             >
-              {hub}
+              {hub} SUS
             </span>
           ))}
         </div>
@@ -221,20 +221,20 @@ export const SUSManagement: React.FC = () => {
       {/* Filter and Search Bar */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="text-slate-500 font-semibold">Filter by Outpost:</span>
+          <span className="text-slate-500 font-semibold">{language === 'bn' ? 'এসইউএস অনুযায়ী ফিল্টার:' : 'Filter by SUS:'}</span>
           <select
             value={selectedArea}
             onChange={(e) => setSelectedArea(e.target.value)}
             className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs bg-slate-50 font-medium"
           >
-            <option value="all">All 7 Outposts ({susSessions.length})</option>
-            <option value="Airport">Airport Area</option>
-            <option value="Mirpur">Mirpur Area</option>
-            <option value="Tejgaon">Tejgaon Area</option>
-            <option value="Rayerbazar">Rayerbazar Area</option>
-            <option value="Kamalapur">Kamalapur Area</option>
-            <option value="Sadarghat">Sadarghat Launch Terminal</option>
-            <option value="Shambazar">Shambazar Area</option>
+            <option value="all">{language === 'bn' ? `সকল এসইউএস সেন্টার (${susSessions.length})` : `All SUS Centers (${susSessions.length})`}</option>
+            <option value="Airport">Airport SUS</option>
+            <option value="Mirpur">Mirpur SUS</option>
+            <option value="Tejgaon">Tejgaon SUS</option>
+            <option value="Rayerbazar">Rayerbazar SUS</option>
+            <option value="Kamalapur">Kamalapur SUS</option>
+            <option value="Sadarghat">Sadarghat SUS</option>
+            <option value="Shambazar">Shambazar SUS</option>
           </select>
         </div>
 
@@ -280,7 +280,7 @@ export const SUSManagement: React.FC = () => {
                 <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between text-white text-xs">
                   <div className="flex items-center gap-1 font-bold">
                     <MapPin className="w-3.5 h-3.5 text-rose-400" />
-                    <span>{session.area} Outpost</span>
+                    <span>{session.area} SUS</span>
                   </div>
                   <div className="flex items-center gap-1 text-[11px] opacity-90">
                     <Calendar className="w-3 h-3" />
@@ -397,19 +397,19 @@ export const SUSManagement: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Outpost / Area *</label>
+                  <label className="block font-semibold text-slate-700 mb-1">{language === 'bn' ? 'এসইউএস এরিয়া *' : 'SUS Area *'}</label>
                   <select
                     value={area}
                     onChange={(e) => setArea(e.target.value as RescueArea)}
                     className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500 bg-white"
                   >
-                    <option value="Airport">Airport Outpost</option>
-                    <option value="Mirpur">Mirpur Outpost</option>
-                    <option value="Tejgaon">Tejgaon Outpost</option>
-                    <option value="Rayerbazar">Rayerbazar Outpost</option>
-                    <option value="Kamalapur">Kamalapur Area</option>
-                    <option value="Sadarghat">Sadarghat Launch Terminal</option>
-                    <option value="Shambazar">Shambazar Area</option>
+                    <option value="Airport">Airport SUS</option>
+                    <option value="Mirpur">Mirpur SUS</option>
+                    <option value="Tejgaon">Tejgaon SUS</option>
+                    <option value="Rayerbazar">Rayerbazar SUS</option>
+                    <option value="Kamalapur">Kamalapur SUS</option>
+                    <option value="Sadarghat">Sadarghat SUS</option>
+                    <option value="Shambazar">Shambazar SUS</option>
                   </select>
                 </div>
               </div>
@@ -674,7 +674,7 @@ export const SUSManagement: React.FC = () => {
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
               <div>
                 <span className="text-xs font-bold text-[#E31B23] uppercase">
-                  Session #{selectedSessionForModal.id} &bull; {selectedSessionForModal.area} Outpost
+                  Session #{selectedSessionForModal.id} &bull; {selectedSessionForModal.area} SUS
                 </span>
                 <h3 className="font-bold text-base text-slate-900 mt-0.5">
                   SUS Session & Meal Voucher Documentation

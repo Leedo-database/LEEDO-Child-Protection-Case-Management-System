@@ -17,7 +17,8 @@ import {
   FileCheck,
   Building2,
   TrendingUp,
-  Download
+  Download,
+  Lock
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { VTCStudent, VTCTrade, VTCLivingStatus, VTCProgressLevel, VTCAttendanceStatus } from '../../types';
@@ -36,7 +37,10 @@ export const VocationalManagement: React.FC = () => {
     addVTCStudent, 
     updateVTCStudent, 
     recordVTCAttendance, 
-    currentUser 
+    currentUser,
+    canAccessVTC,
+    language,
+    setActiveView
   } = useApp();
 
   const [selectedTrade, setSelectedTrade] = useState<string>('all');
@@ -46,6 +50,30 @@ export const VocationalManagement: React.FC = () => {
   const [showAttendanceModal, setShowAttendanceModal] = useState(false);
   const [selectedStudentForDetail, setSelectedStudentForDetail] = useState<VTCStudent | null>(null);
   const [successMessage, setSuccessMessage] = useState('');
+
+  if (!canAccessVTC) {
+    return (
+      <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center max-w-xl mx-auto my-8 shadow-2xs">
+        <div className="w-16 h-16 bg-purple-50 text-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Lock className="w-8 h-8" />
+        </div>
+        <h2 className="text-lg font-bold text-slate-900 mb-2 font-display">
+          {language === 'bn' ? 'কারিগরি প্রশিক্ষণ (VTC) তথ্য সংরক্ষিত' : 'Vocational Trade Center (VTC) Access Restricted'}
+        </h2>
+        <p className="text-xs text-slate-600 mb-6 leading-relaxed">
+          {language === 'bn' 
+            ? 'আপনার বর্তমান অ্যাসাইনমেন্টে কারিগরি প্রশিক্ষণ (VTC) দেখার অনুমতি অন্তর্ভুক্ত নেই। এই তথ্য দেখার অনুমতি শুধুমাত্র ভিটিসি ইন্সট্রাক্টর, কদমতলী শেল্টার ও হেড অফিসের অনুমোদিত কর্মীদের রয়েছে।'
+            : 'Your current operational assignment does not include VTC access. Vocational data is accessible only by authorized VTC instructors, Kadamtali Shelter staff, and Head Office management.'}
+        </p>
+        <button
+          onClick={() => setActiveView('sus')}
+          className="px-5 py-2.5 bg-[#E31B23] text-white font-bold text-xs rounded-xl hover:bg-[#c9151d] transition-colors cursor-pointer"
+        >
+          {language === 'bn' ? 'এসইউএস (SUS) সেন্টারে যান' : 'Go to SUS Centers'}
+        </button>
+      </div>
+    );
+  }
 
   // Daily Attendance Quick-Record Form State
   const [attDate, setAttDate] = useState(new Date().toISOString().split('T')[0]);
@@ -72,7 +100,7 @@ export const VocationalManagement: React.FC = () => {
   // Filter students with role/area based access control
   const filteredStudents = vtcStudents.filter(s => {
     // Area / Location access restriction for staff
-    if (currentUser.role === 'Shelter Staff' || currentUser.role === 'Rescue Worker / Outpost Staff') {
+    if (currentUser.role === 'Shelter Staff' || currentUser.role === 'Rescue Worker / SUS Staff' || currentUser.role === 'Rescue Worker / Outpost Staff') {
       const assigned = (currentUser.assignedShelter || currentUser.assignedArea || '').toLowerCase();
       if (assigned.includes('kadamtali') && s.centerLocation !== 'Kadamtali Center') {
         return false;

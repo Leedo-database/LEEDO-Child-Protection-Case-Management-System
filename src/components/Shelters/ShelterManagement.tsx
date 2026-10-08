@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Building2, 
   Users, 
@@ -26,6 +26,7 @@ import {
 import { useApp } from '../../context/AppContext';
 import { getDaysInShelter, getSixWeekAlertStatus } from '../../utils/calculations';
 import { ShelterName, ShelterInfo } from '../../types';
+import { canUserAccessShelter } from '../../utils/areaPermissions';
 
 export const ShelterManagement: React.FC = () => {
   const { 
@@ -42,9 +43,24 @@ export const ShelterManagement: React.FC = () => {
     language
   } = useApp();
 
+  // Filter shelters according to user's assigned area/shelter authorization rules
+  const accessibleShelters = shelters
+    .filter(s => s.name === 'Kamalapur Shelter' || s.name === 'Kadamtali Shelter' || s.name === 'LEEDO Peace Home')
+    .filter(s => canUserAccessShelter(currentUser, s.name));
+
   // If user is assigned to a specific shelter, default to that
-  const defaultShelter: ShelterName = currentUser.assignedShelter || 'Kamalapur Shelter';
+  const defaultShelter: ShelterName = 
+    (currentUser.assignedShelter && canUserAccessShelter(currentUser, currentUser.assignedShelter) ? (currentUser.assignedShelter as ShelterName) : null) ||
+    (accessibleShelters[0]?.name as ShelterName) || 
+    'Kamalapur Shelter';
+
   const [selectedShelterName, setSelectedShelterName] = useState<ShelterName>(defaultShelter);
+
+  useEffect(() => {
+    if (accessibleShelters.length > 0 && !accessibleShelters.some(s => s.name === selectedShelterName)) {
+      setSelectedShelterName(accessibleShelters[0].name as ShelterName);
+    }
+  }, [accessibleShelters, selectedShelterName]);
 
   // Transfer modal state
   const [childToTransfer, setChildToTransfer] = useState<any>(null);
@@ -60,7 +76,31 @@ export const ShelterManagement: React.FC = () => {
   const [editCapacity, setEditCapacity] = useState(40);
   const [editEmail, setEditEmail] = useState('');
 
-  const currentShelter = shelters.find((s) => s.name === selectedShelterName) || shelters[0];
+  if (accessibleShelters.length === 0) {
+    return (
+      <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center max-w-xl mx-auto my-8">
+        <div className="w-16 h-16 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Lock className="w-8 h-8" />
+        </div>
+        <h2 className="text-lg font-bold text-slate-900 mb-2">
+          {language === 'bn' ? 'শেল্টার তথ্য দেখার অনুমতি সংরক্ষিত' : 'Shelter Access Restricted'}
+        </h2>
+        <p className="text-xs text-slate-600 mb-6 leading-relaxed">
+          {language === 'bn' 
+            ? 'আপনার বর্তমান অ্যাসাইনমেন্ট শুধুমাত্র এসইউএস (SUS) বা আউটরিচ সেন্টারে সীমাবদ্ধ। প্রাতিষ্ঠানিক শেল্টার ব্যবস্থাপনার তথ্য দেখার অনুমতি শুধুমাত্র অনুমোদিত শেল্টার কর্মী ও হেড অফিসের রয়েছে।'
+            : 'Your current operational assignment is restricted to SUS / Outreach centers. Institutional shelter access is reserved for authorized Shelter Staff and Head Office management.'}
+        </p>
+        <button
+          onClick={() => setActiveView('sus')}
+          className="px-5 py-2.5 bg-[#E31B23] text-white font-bold text-xs rounded-xl hover:bg-[#c9151d] transition-colors cursor-pointer"
+        >
+          {language === 'bn' ? 'এসইউএস (SUS) সেন্টারে যান' : 'Go to SUS Centers'}
+        </button>
+      </div>
+    );
+  }
+
+  const currentShelter = shelters.find((s) => s.name === selectedShelterName) || accessibleShelters[0];
   const shelterChildren = children.filter((c) => !c.isArchived && c.shelterName === selectedShelterName && c.currentShelterStatus === 'Active Resident');
 
   const over6Weeks = shelterChildren.filter((c) => getSixWeekAlertStatus(c).status === 'exceeded');
@@ -114,11 +154,9 @@ export const ShelterManagement: React.FC = () => {
         {/* Shelter Switcher Tabs and Action Controls */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
           <div className="flex flex-wrap p-1 bg-slate-100 rounded-xl border border-slate-200">
-            {shelters
-              .filter(s => s.name === 'Kamalapur Shelter' || s.name === 'Kadamtali Shelter' || s.name === 'LEEDO Peace Home')
-              .map((s) => {
-                const isTabActive = selectedShelterName === s.name;
-                const count = children.filter(c => !c.isArchived && c.shelterName === s.name && c.currentShelterStatus === 'Active Resident').length;
+            {accessibleShelters.map((s) => {
+              const isTabActive = selectedShelterName === s.name;
+              const count = children.filter(c => !c.isArchived && c.shelterName === s.name && c.currentShelterStatus === 'Active Resident').length;
 
                 return (
                   <button

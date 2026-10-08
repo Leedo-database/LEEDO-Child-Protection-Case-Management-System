@@ -32,12 +32,24 @@ import { INITIAL_THIRD_PARTY_SHELTERS, INITIAL_NOTIFICATIONS } from '../data/ref
 import { getRoleAndPermissionsByDesignation, isUserHrOrKanta } from '../utils/staffRoleMapping';
 import { getTodayDateString } from '../utils/calculations';
 import { Language, getTranslation } from '../i18n/translations';
+import { 
+  isFullAccessUser, 
+  canUserAccessChild, 
+  canUserAccessSUSArea, 
+  canUserAccessShelter, 
+  canUserAccessVTC, 
+  getUserAssignedAreasList 
+} from '../utils/areaPermissions';
+import { db, handleFirestoreError, OperationType } from '../lib/firebase';
+import { collection, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 
 interface AppContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
   toggleLanguage: () => void;
   t: (key: string, fallback?: string) => string;
+  customLogoUrl: string | null;
+  updateCustomLogo: (newLogoUrl: string | null) => Promise<boolean>;
   currentUser: User;
   setCurrentUser: (user: User) => void;
   switchUserRole: (role: UserRole) => void;
@@ -159,6 +171,7 @@ const STORAGE_KEYS = {
   SUS_SESSIONS: 'leedo_sus_sessions_v2',
   VTC_STUDENTS: 'leedo_vtc_students_v2',
   LANGUAGE: 'leedo_language_pref',
+  CUSTOM_LOGO: 'leedo_custom_logo_url',
 };
 
 export const MASTER_HR_EMAIL = 'hr.leedo2000@gmail.com';
@@ -376,6 +389,42 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
 
   const [forcedPasswordChangeUserId, setForcedPasswordChangeUserId] = useState<string | null>(null);
 
+  // Organization Logo state (persisted to Cloud Firestore & localStorage)
+  const [customLogoUrl, setCustomLogoUrl] = useState<string | null>(() => {
+    return localStorage.getItem(STORAGE_KEYS.CUSTOM_LOGO) || null;
+  });
+
+  useEffect(() => {
+    if (customLogoUrl) {
+      localStorage.setItem(STORAGE_KEYS.CUSTOM_LOGO, customLogoUrl);
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.CUSTOM_LOGO);
+    }
+  }, [customLogoUrl]);
+
+  const updateCustomLogo = async (newLogoUrl: string | null): Promise<boolean> => {
+    const clean = newLogoUrl ? newLogoUrl.trim() : null;
+    setCustomLogoUrl(clean);
+    if (clean) {
+      localStorage.setItem(STORAGE_KEYS.CUSTOM_LOGO, clean);
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.CUSTOM_LOGO);
+    }
+
+    try {
+      await setDoc(doc(db, 'system', 'settings'), {
+        customLogoUrl: clean || '',
+        updatedAt: new Date().toISOString(),
+        updatedBy: currentUser.name || 'HR Administration',
+      }, { merge: true });
+      addAuditEntry('UPDATE_ORGANIZATION_LOGO', undefined, `HR updated organization logo to: ${clean ? 'Custom Logo' : 'Default Logo'}`);
+      return true;
+    } catch (err) {
+      console.warn('Firestore settings update deferred/local:', err);
+      return true;
+    }
+  };
+
   const [activeView, setActiveView] = useState<string>('dashboard');
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
   const [globalSearchQuery, setGlobalSearchQuery] = useState<string>('');
@@ -384,6 +433,152 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
   const [branchFilter, setBranchFilter] = useState<string>('All');
   const [activeMasterOtp, setActiveMasterOtp] = useState<string | null>(null);
   const [isSyncingFirebase, setIsSyncingFirebase] = useState<boolean>(false);
+
+  // Firestore real-time synchronization listeners for multi-device cross-computer data persistence
+  useEffect(() => {
+    // 1. Organization Settings & Logo listener
+    const unsubSettings = onSnapshot(doc(db, 'system', 'settings'), (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        if (data && typeof data.customLogoUrl === 'string') {
+          const logo = data.customLogoUrl.trim() || null;
+          setCustomLogoUrl(logo);
+          if (logo) {
+            localStorage.setItem(STORAGE_KEYS.CUSTOM_LOGO, logo);
+          } else {
+            localStorage.removeItem(STORAGE_KEYS.CUSTOM_LOGO);
+          }
+        }
+      }
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'system/settings');
+    });
+
+    // 2. Children collection listener
+    const unsubChildren = onSnapshot(collection(db, 'children'), (snapshot) => {
+      if (!snapshot.empty) {
+        const firestoreChildren: Child[] = [];
+        snapshot.forEach((d) => {
+          const c = d.data() as Child;
+          if (c && c.id && !DEMO_CHILD_IDS.has(c.id) && !DEMO_CHILD_NAMES.has(c.name)) {
+            firestoreChildren.push(c);
+          }
+        });
+        if (firestoreChildren.length > 0) {
+          setChildrenList((prev) => {
+            const map = new Map<string, Child>();
+            firestoreChildren.forEach(c => map.set(c.id, c));
+            prev.forEach(c => {
+              if (!map.has(c.id) && !DEMO_CHILD_IDS.has(c.id)) {
+                map.set(c.id, c);
+                // Back up local additions to cloud
+                setDoc(doc(db, 'children', c.id), c, { merge: true }).catch(() => {});
+              }
+            });
+            const merged = Array.from(map.values()).sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+            localStorage.setItem(STORAGE_KEYS.CHILDREN, JSON.stringify(merged));
+            return merged;
+          });
+        }
+      }
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'children');
+    });
+
+    // 3. SUS Sessions collection listener
+    const unsubSUS = onSnapshot(collection(db, 'susSessions'), (snapshot) => {
+      if (!snapshot.empty) {
+        const firestoreSessions: SUSSession[] = [];
+        snapshot.forEach((d) => {
+          const s = d.data() as SUSSession;
+          if (s && s.id && !DEMO_SUS_IDS.has(s.id)) {
+            firestoreSessions.push(s);
+          }
+        });
+        if (firestoreSessions.length > 0) {
+          setSusSessions((prev) => {
+            const map = new Map<string, SUSSession>();
+            firestoreSessions.forEach(s => map.set(s.id, s));
+            prev.forEach(s => {
+              if (!map.has(s.id) && !DEMO_SUS_IDS.has(s.id)) {
+                map.set(s.id, s);
+                setDoc(doc(db, 'susSessions', s.id), s, { merge: true }).catch(() => {});
+              }
+            });
+            const merged = Array.from(map.values()).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+            localStorage.setItem(STORAGE_KEYS.SUS_SESSIONS, JSON.stringify(merged));
+            return merged;
+          });
+        }
+      }
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'susSessions');
+    });
+
+    // 4. Vocational Students collection listener
+    const unsubVTC = onSnapshot(collection(db, 'vocationalStudents'), (snapshot) => {
+      if (!snapshot.empty) {
+        const firestoreStudents: VTCStudent[] = [];
+        snapshot.forEach((d) => {
+          const st = d.data() as VTCStudent;
+          if (st && st.id && !DEMO_VTC_IDS.has(st.id)) {
+            firestoreStudents.push(st);
+          }
+        });
+        if (firestoreStudents.length > 0) {
+          setVtcStudents((prev) => {
+            const map = new Map<string, VTCStudent>();
+            firestoreStudents.forEach(st => map.set(st.id, st));
+            prev.forEach(st => {
+              if (!map.has(st.id) && !DEMO_VTC_IDS.has(st.id)) {
+                map.set(st.id, st);
+                setDoc(doc(db, 'vocationalStudents', st.id), st, { merge: true }).catch(() => {});
+              }
+            });
+            const merged = Array.from(map.values());
+            localStorage.setItem(STORAGE_KEYS.VTC_STUDENTS, JSON.stringify(merged));
+            return merged;
+          });
+        }
+      }
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'vocationalStudents');
+    });
+
+    // 5. Users collection listener
+    const unsubUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
+      if (!snapshot.empty) {
+        const firestoreUsers: User[] = [];
+        snapshot.forEach((d) => {
+          const u = d.data() as User;
+          if (u && u.id) {
+            firestoreUsers.push(u);
+          }
+        });
+        if (firestoreUsers.length > 0) {
+          setUsersList((prev) => {
+            const map = new Map<string, User>();
+            OFFICIAL_LEEDO_USERS.forEach(u => map.set(u.id, u));
+            prev.forEach(u => map.set(u.id, u));
+            firestoreUsers.forEach(u => map.set(u.id, u));
+            const merged = Array.from(map.values());
+            localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(merged));
+            return merged;
+          });
+        }
+      }
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'users');
+    });
+
+    return () => {
+      unsubSettings();
+      unsubChildren();
+      unsubSUS();
+      unsubVTC();
+      unsubUsers();
+    };
+  }, []);
 
   // Persist state changes
   useEffect(() => {
@@ -438,11 +633,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
     }
   };
 
-  // Location & Role based children filtering
+  // Location & Hub Hierarchy based children filtering
   const filteredChildren = useMemo(() => {
     return childrenList.filter((child) => {
-      // Super Admin and Head Office can see all, optionally filtered by branchFilter
-      if (currentUser.role === 'Super Admin' || currentUser.role === 'Head Office Staff') {
+      // Program Coordinator, Super Admin, and Head Office have full access across all areas
+      if (isFullAccessUser(currentUser)) {
         if (branchFilter === 'All') return true;
         if (branchFilter === 'Kamalapur Shelter' || branchFilter === 'Kadamtali Shelter' || branchFilter === 'LEEDO Peace Home') {
           return child.shelterName === branchFilter;
@@ -450,53 +645,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
         return child.area.toLowerCase().includes(branchFilter.toLowerCase());
       }
 
-      // Shelter Staff: Kamalapur sees Kamalapur data; Kadamtali sees Kadamtali data
-      if (currentUser.role === 'Shelter Staff') {
-        const shelterName = currentUser.assignedShelter || 'Kamalapur Shelter';
-        const areaName = currentUser.assignedArea || '';
-        const inShelter = child.shelterName === shelterName;
-        const inArea = areaName ? child.area.toLowerCase().includes(areaName.toLowerCase()) : false;
-        return inShelter || inArea;
-      }
-
-      // Peace Home Staff: sees LEEDO Peace Home children (up to 17y long-term care)
-      if (currentUser.role === 'Peace Home Staff') {
-        return child.shelterName === 'LEEDO Peace Home' || child.caseStatus === 'Peace Home Resident';
-      }
-
-      // Rescue Worker / Outpost Staff (Airport, Mirpur, Tejgaon, Rayerbazar)
-      // Only sees rescues and child records from their designated outpost area
-      if (currentUser.role === 'Rescue Worker / Outpost Staff') {
-        const assignedArea = (currentUser.assignedArea || '').toLowerCase();
-        const matchesArea = assignedArea ? child.area.toLowerCase().includes(assignedArea) : false;
-        const matchesRescuer = child.rescuedBy.toLowerCase().includes(currentUser.name.toLowerCase());
-        return matchesArea || matchesRescuer;
-      }
-
-      // Field Officer: if assignedArea is specified and not 'All', filter by that
-      if (currentUser.role === 'Field Officer / Case Worker') {
-        if (!currentUser.assignedArea || currentUser.assignedArea === 'All') return true;
-        const assignedArea = currentUser.assignedArea.toLowerCase();
-        return child.area.toLowerCase().includes(assignedArea) || 
-               child.assignedCaseWorker.toLowerCase().includes(currentUser.name.toLowerCase());
-      }
-
-      return true;
+      // Check granular area & hub permissions according to operational policies
+      return canUserAccessChild(currentUser, child);
     });
   }, [childrenList, currentUser, branchFilter]);
 
   // Role and Area-based access control for SUS Sessions
-  // Outpost staff and field officers only see sessions in their assigned area
+  // Airport, Mirpur, Tejgaon, Rayerbazar, Kamalapur, Sadarghat, Shambazar
   const filteredSUSSessions = useMemo(() => {
     return susSessions.filter((session) => {
-      if (currentUser.role === 'Super Admin' || currentUser.role === 'Head Office Staff') {
+      if (isFullAccessUser(currentUser)) {
         return true;
       }
-      if (currentUser.role === 'Rescue Worker / Outpost Staff' || currentUser.role === 'Field Officer / Case Worker') {
-        if (!currentUser.assignedArea || currentUser.assignedArea === 'All') return true;
-        return session.area.toLowerCase() === currentUser.assignedArea.toLowerCase();
-      }
-      return true;
+      return canUserAccessSUSArea(currentUser, session.area);
     });
   }, [susSessions, currentUser]);
 
@@ -631,6 +792,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
     };
 
     setChildrenList((prev) => [newChild, ...prev]);
+    setDoc(doc(db, 'children', uniqueId), newChild, { merge: true }).catch((e) => console.warn('Cloud child sync:', e));
     addAuditEntry('REGISTER_CHILD', uniqueId, `Registered new rescue child ${newChild.name} (${uniqueId}) at ${newChild.shelterName}`);
 
     // If Psychological First Aid was checked, trigger an urgent counseling task notification for Nargis
@@ -685,6 +847,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
             ...updates,
             updatedAt: new Date().toISOString(),
           };
+          setDoc(doc(db, 'children', id), updated, { merge: true }).catch((e) => console.warn('Cloud child update:', e));
           return updated;
         }
         return child;
@@ -1332,30 +1495,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
   }, [currentUser, isSuperAdminOrHeadOffice]);
 
   const canAccessSUS = useMemo(() => {
-    // Street Educators, Mobilizers, Coordinators, Head Office, Admin
-    if (isSuperAdminOrHeadOffice) return true;
+    if (isFullAccessUser(currentUser)) return true;
+    const assigned = getUserAssignedAreasList(currentUser);
+    if (assigned.some(a => a.toLowerCase().includes('sus') || a.toLowerCase().includes('shelter') || a.toLowerCase().includes('kamalapur') || a.toLowerCase().includes('kadamtali'))) return true;
     const des = (currentUser.designation || '').toLowerCase();
-    const role = (currentUser.role || '').toLowerCase();
-    if (des.includes('educator') || des.includes('mobilizer') || des.includes('coordinator') || role.includes('outpost') || role.includes('case worker')) return true;
+    if (des.includes('educator') || des.includes('mobilizer') || des.includes('coordinator') || des.includes('rescue') || des.includes('case worker')) return true;
     return false;
-  }, [currentUser, isSuperAdminOrHeadOffice]);
+  }, [currentUser]);
 
   const canAccessShelters = useMemo(() => {
-    // Shelter Staff, Mobilizers, Mother, Cook, Peace Home Staff, Head Office, Admin
-    if (isSuperAdminOrHeadOffice) return true;
+    if (isFullAccessUser(currentUser)) return true;
+
+    // Staff assigned specifically to Kamalapur SUS, Sadarghat SUS, Shambazar SUS, or Vocational
+    // CANNOT access shelter management
+    const assigned = getUserAssignedAreasList(currentUser);
+    const hasShelterAssigned = assigned.some(
+      a => a.toLowerCase().includes('shelter') || a.toLowerCase().includes('peace home')
+    );
+    if (hasShelterAssigned) return true;
+
+    // If assigned only to pure SUS or Vocational, deny shelter management
+    const hasOnlySUSOrVocational = assigned.length > 0 && assigned.every(
+      a => a.toLowerCase().includes('sus') || a.toLowerCase().includes('vocational')
+    );
+    if (hasOnlySUSOrVocational) return false;
+
     const des = (currentUser.designation || '').toLowerCase();
     const role = (currentUser.role || '').toLowerCase();
-    if (des.includes('mother') || des.includes('cook') || des.includes('incharge') || des.includes('mobilizer') || role.includes('shelter') || role.includes('peace home')) return true;
+    if (des.includes('mother') || des.includes('cook') || des.includes('incharge') || role.includes('shelter') || role.includes('peace home')) return true;
     return false;
-  }, [currentUser, isSuperAdminOrHeadOffice]);
+  }, [currentUser]);
 
   const canAccessVTC = useMemo(() => {
-    // Trade teachers (Sewing, ICT, Beautification, Carpentry, Handicrafts), Mobilizers, Head Office, Admin
-    if (isSuperAdminOrHeadOffice) return true;
-    const des = (currentUser.designation || '').toLowerCase();
-    if (des.includes('teacher') || des.includes('instructor') || des.includes('vtc') || des.includes('trade') || des.includes('sewing') || des.includes('ict') || des.includes('mobilizer')) return true;
-    return false;
-  }, [currentUser, isSuperAdminOrHeadOffice]);
+    return canUserAccessVTC(currentUser);
+  }, [currentUser]);
 
   const canUpdateCounseling = useMemo(() => {
     // Inclusive School Special Educators, Counselors, Peace Home Staff, Head Office
@@ -1392,6 +1565,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
       return false;
     }
     setChildrenList((prev) => prev.filter((c) => c.id !== childId));
+    deleteDoc(doc(db, 'children', childId)).catch((e) => console.warn('Cloud child delete:', e));
     addAuditEntry('DELETE_CHILD_RECORD', childId, `Head Office/Admin permanently deleted child case ${childId}`);
     return true;
   };
@@ -1440,11 +1614,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
       createdBy: currentUser.name,
     };
     setSusSessions((prev) => [newSession, ...prev]);
+    setDoc(doc(db, 'susSessions', newSession.id), newSession, { merge: true }).catch((e) => console.warn('Cloud SUS sync:', e));
     addAuditEntry('RECORD_SUS_SESSION', undefined, `Recorded School Under the Sky session for ${sessionData.area} (${sessionData.totalAttendance} children attended, ৳${sessionData.mealCost} meal expenses)`);
   };
 
   const updateSUSSession = (id: string, updates: Partial<SUSSession>) => {
-    setSusSessions((prev) => prev.map((s) => (s.id === id ? { ...s, ...updates } : s)));
+    setSusSessions((prev) => prev.map((s) => {
+      if (s.id === id) {
+        const up = { ...s, ...updates };
+        setDoc(doc(db, 'susSessions', id), up, { merge: true }).catch((e) => console.warn('Cloud SUS update:', e));
+        return up;
+      }
+      return s;
+    }));
     addAuditEntry('UPDATE_SUS_SESSION', undefined, `Updated SUS session ${id}`);
   };
 
@@ -1456,6 +1638,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
       return;
     }
     setSusSessions((prev) => prev.filter((s) => s.id !== id));
+    deleteDoc(doc(db, 'susSessions', id)).catch((e) => console.warn('Cloud SUS delete:', e));
     addAuditEntry('DELETE_SUS_SESSION', undefined, `Deleted SUS session ${id}`);
   };
 
@@ -1477,11 +1660,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
     };
 
     setVtcStudents(prev => [newStudent, ...prev]);
+    setDoc(doc(db, 'vocationalStudents', studentId), newStudent, { merge: true }).catch((e) => console.warn('Cloud VTC sync:', e));
     addAuditEntry('ENROLL_VTC_STUDENT', undefined, `Enrolled vocational student ${newStudent.name} (${studentId}) in ${newStudent.trade} - ${newStudent.livingCondition}`);
   };
 
   const updateVTCStudent = (studentId: string, updates: Partial<VTCStudent>) => {
-    setVtcStudents(prev => prev.map(s => s.id === studentId ? { ...s, ...updates } : s));
+    setVtcStudents(prev => prev.map(s => {
+      if (s.id === studentId) {
+        const up = { ...s, ...updates };
+        setDoc(doc(db, 'vocationalStudents', studentId), up, { merge: true }).catch((e) => console.warn('Cloud VTC update:', e));
+        return up;
+      }
+      return s;
+    }));
     addAuditEntry('UPDATE_VTC_STUDENT', undefined, `Updated vocational student ${studentId} records`);
   };
 
@@ -1493,6 +1684,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
       return;
     }
     setVtcStudents(prev => prev.filter(s => s.id !== studentId));
+    deleteDoc(doc(db, 'vocationalStudents', studentId)).catch((e) => console.warn('Cloud VTC delete:', e));
     addAuditEntry('DELETE_VTC_STUDENT', undefined, `Deleted VTC student ${studentId}`);
   };
 
@@ -1504,11 +1696,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
       const totalRecorded = updatedAttendance.length;
       const presentCount = updatedAttendance.filter(a => a.status === 'Present').length;
       const rate = totalRecorded > 0 ? Math.round((presentCount / totalRecorded) * 100) : s.attendanceRatePercent;
-      return {
+      const updated = {
         ...s,
         recentAttendance: updatedAttendance,
         attendanceRatePercent: rate,
       };
+      setDoc(doc(db, 'vocationalStudents', studentId), updated, { merge: true }).catch((e) => console.warn('Cloud VTC attendance sync:', e));
+      return updated;
     }));
   };
 
@@ -1516,10 +1710,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
   const syncDataToFirebase = async (): Promise<{ success: boolean; message: string }> => {
     setIsSyncingFirebase(true);
     try {
-      // Dynamic import of Firebase SDK to avoid runtime issues if offline
-      const { db } = await import('../lib/firebase');
-      const { doc, setDoc } = await import('firebase/firestore');
-
       // Sync summary bundle and individual collections
       const syncMeta = {
         lastSyncedAt: new Date().toISOString(),
@@ -1534,31 +1724,44 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
 
       await setDoc(doc(db, 'system', 'syncMetadata'), syncMeta, { merge: true });
 
-      // Sync sample of children
-      for (const child of childrenList.slice(0, 10)) {
+      if (customLogoUrl) {
+        await setDoc(doc(db, 'system', 'settings'), {
+          customLogoUrl,
+          updatedAt: new Date().toISOString(),
+          updatedBy: currentUser.name,
+        }, { merge: true });
+      }
+
+      // Sync all children without limit
+      for (const child of childrenList) {
         await setDoc(doc(db, 'children', child.id), child, { merge: true });
       }
 
-      // Sync sample of staff
-      for (const u of usersList.slice(0, 10)) {
+      // Sync all staff
+      for (const u of usersList) {
         await setDoc(doc(db, 'users', u.id), u, { merge: true });
       }
 
-      // Sync SUS sessions
-      for (const sess of susSessions.slice(0, 5)) {
+      // Sync all SUS sessions
+      for (const sess of susSessions) {
         await setDoc(doc(db, 'susSessions', sess.id), sess, { merge: true });
       }
 
-      // Sync VTC students
-      for (const st of vtcStudents.slice(0, 5)) {
+      // Sync all VTC students
+      for (const st of vtcStudents) {
         await setDoc(doc(db, 'vocationalStudents', st.id), st, { merge: true });
+      }
+
+      // Sync shelters
+      for (const sh of shelters) {
+        await setDoc(doc(db, 'shelters', sh.id), sh, { merge: true });
       }
 
       addAuditEntry('FIREBASE_CLOUD_SYNC', undefined, `Published full dataset to Firestore database (refined-axle-rlcf1). ${childrenList.length} children, ${usersList.length} staff, ${vtcStudents.length} VTC students.`);
       setIsSyncingFirebase(false);
       return {
         success: true,
-        message: `Successfully synchronized ${childrenList.length} child records, ${usersList.length} staff accounts, and ${vtcStudents.length} VTC students with Google Cloud Firestore.`
+        message: `সকল তথ্য (${childrenList.length} শিশু, ${usersList.length} কর্মী, ${susSessions.length} এসইউএস ও ${vtcStudents.length} কারিগরি শিক্ষার্থী) সফলভাবে ক্লাউডে সিঙ্ক হয়েছে!`
       };
     } catch (err: any) {
       console.warn('Firebase sync completed with local cache update:', err);
@@ -1599,6 +1802,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
       joinedDate: userData.joinedDate || getTodayDateString(),
     };
     setUsersList((prev) => [...prev, newUser]);
+    setDoc(doc(db, 'users', newUser.id), newUser, { merge: true }).catch((e) => console.warn('Cloud user sync:', e));
     addAuditEntry('ADD_STAFF_ACCOUNT', undefined, `HR added staff member: ${newUser.name} (${newUser.email || newUser.employeeId}) - Designation: ${newUser.designation || newUser.role}`);
   };
 
@@ -1622,6 +1826,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
       prev.map((u) => {
         if (u.id === userId) {
           const updated = { ...u, ...finalUpdates };
+          setDoc(doc(db, 'users', userId), updated, { merge: true }).catch((e) => console.warn('Cloud user update:', e));
           if (currentUser.id === userId) {
             setCurrentUser(updated);
           }
@@ -1637,7 +1842,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
     setUsersList((prev) =>
       prev.map((u) => {
         if (u.id === userId) {
-          return { ...u, status, notes: notes !== undefined ? notes : u.notes };
+          const updated = { ...u, status, notes: notes !== undefined ? notes : u.notes };
+          setDoc(doc(db, 'users', userId), updated, { merge: true }).catch((e) => console.warn('Cloud user status update:', e));
+          return updated;
         }
         return u;
       })
@@ -1660,6 +1867,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
       return;
     }
     setUsersList((prev) => prev.filter((u) => u.id !== userId));
+    deleteDoc(doc(db, 'users', userId)).catch((e) => console.warn('Cloud user delete:', e));
     addAuditEntry('DELETE_STAFF_ACCOUNT', undefined, `HR deleted staff ID ${userId}`);
   };
 
@@ -2044,6 +2252,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
         generateMasterOtp,
         verifyMasterOtp,
         activeMasterOtp,
+
+        customLogoUrl,
+        updateCustomLogo,
       }}
     >
       {reactChildren}

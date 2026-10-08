@@ -204,8 +204,8 @@ export const TRANSLATIONS: TranslationDict = {
     bn: '৬-সপ্তাহ সুরক্ষায় সক্রিয়'
   },
   inTransitOutposts: {
-    en: 'In Outpost Shelters',
-    bn: 'ট্রানজিট শেল্টারে অবস্থান'
+    en: 'In SUS / Transit Centers',
+    bn: 'এসইউএস / ট্রানজিট সেন্টারে অবস্থান'
   },
   reintegratedWithFamily: {
     en: 'Reintegrated with Family',
@@ -378,8 +378,8 @@ export const TRANSLATIONS: TranslationDict = {
     bn: 'পিস হোম কর্মী'
   },
   roleRescueWorker: {
-    en: 'Rescue Worker / Outpost Staff',
-    bn: 'রেসকিউ কর্মী / আউটপোস্ট স্টাফ'
+    en: 'Rescue Worker / SUS Staff',
+    bn: 'রেসকিউ কর্মী / এসইউএস স্টাফ'
   },
   roleFieldOfficer: {
     en: 'Field Officer / Case Worker',

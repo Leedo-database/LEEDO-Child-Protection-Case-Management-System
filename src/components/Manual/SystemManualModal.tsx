@@ -134,7 +134,7 @@ export const SystemManualModal: React.FC<SystemManualModalProps> = ({ isOpen, on
                 <div className="p-3.5 bg-rose-50/50 rounded-2xl border border-rose-100">
                   <h4 className="font-bold text-rose-900 text-xs mb-1">R1: Rescue & Reception (Kamalapur & Kadamtali)</h4>
                   <p className="text-[11px] text-slate-600">
-                    24/7 rescue outposts (Airport, Mirpur, Tejgaon, Sadarghat, etc.) receive lost, runaway, or vulnerable children. Maximum transitional stay is strictly <strong>6 weeks (42 days)</strong> to prevent institutional dependency.
+                    24/7 rescue and SUS centers (Airport, Mirpur, Tejgaon, Sadarghat, etc.) receive lost, runaway, or vulnerable children. Maximum transitional stay is strictly <strong>6 weeks (42 days)</strong> to prevent institutional dependency.
                   </p>
                 </div>
 
@@ -206,7 +206,7 @@ export const SystemManualModal: React.FC<SystemManualModalProps> = ({ isOpen, on
                   <span>Dedicated to long-term sanctuary residents (up to 17 years old), formal schooling, and adolescent care.</span>
                 </div>
                 <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 flex items-start gap-2">
-                  <span className="font-bold text-slate-900 min-w-36">Rescue / Outpost Staff:</span>
+                  <span className="font-bold text-slate-900 min-w-36">Rescue / SUS Staff:</span>
                   <span>Area-scoped to their designated zone (Airport, Mirpur, Tejgaon, Sadarghat, etc.) for field rescues and SUS education.</span>
                 </div>
               </div>
@@ -256,7 +256,7 @@ export const SystemManualModal: React.FC<SystemManualModalProps> = ({ isOpen, on
               <div>
                 <h3 className="text-sm font-bold text-slate-900 mb-1 flex items-center gap-1.5">
                   <Briefcase className="w-4 h-4 text-[#E31B23]" />
-                  SUS Outposts & Vocational Trade Center (VTC)
+                  SUS Centers & Vocational Trade Center (VTC)
                 </h3>
                 <p>
                   Distinct guidelines for non-formal street education versus vocational skill development.
@@ -270,7 +270,7 @@ export const SystemManualModal: React.FC<SystemManualModalProps> = ({ isOpen, on
                     <h4 className="font-bold text-slate-900 text-xs">School Under the Sky (SUS)</h4>
                   </div>
                   <p className="text-[11px] text-slate-600 leading-relaxed">
-                    Held in open-air spots across 7 outposts (Airport, Mirpur, Tejgaon, Rayerbazar, Kamalapur, Sadarghat, Shambazar). Tracks:
+                    Held in open-air spots across 7 SUS centers (Airport, Mirpur, Tejgaon, Rayerbazar, Kamalapur, Sadarghat, Shambazar). Tracks:
                   </p>
                   <ul className="list-disc pl-4 text-[10px] space-y-0.5 text-slate-600">
                     <li>Boys and girls daily headcounts</li>

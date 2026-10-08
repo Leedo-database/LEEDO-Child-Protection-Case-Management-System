@@ -28,6 +28,7 @@ import {
 import { useApp, MASTER_HR_EMAIL } from '../../context/AppContext';
 import { User, UserRole, StaffStatus, ShelterName, RescueArea, StaffPermissions } from '../../types';
 import { STANDARD_LEEDO_DESIGNATIONS, getRoleAndPermissionsByDesignation } from '../../utils/staffRoleMapping';
+import { LEEDO_OPERATIONAL_AREAS, getUserAssignedAreasList } from '../../utils/areaPermissions';
 
 export const UsersView: React.FC = () => {
   const { 
@@ -38,7 +39,6 @@ export const UsersView: React.FC = () => {
     updateUser,
     updateUserStatus, 
     deleteUser,
-    wipeAllDemoData,
     updateUserPermissions,
     hasDeletePermission,
     children,
@@ -52,8 +52,6 @@ export const UsersView: React.FC = () => {
   const [filterRole, setFilterRole] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showWipeModal, setShowWipeModal] = useState(false);
-  const [wipeConfirmText, setWipeConfirmText] = useState('');
   
   // Password Reset Confirmation Modal
   const [resettingUser, setResettingUser] = useState<User | null>(null);
@@ -65,23 +63,21 @@ export const UsersView: React.FC = () => {
   const [permCanCreate, setPermCanCreate] = useState(true);
   const [permCanManageHR, setPermCanManageHR] = useState(false);
 
-  // Staff details editor modal (Name & Mobile number updates)
+  // Staff details editor modal (Name, Phone & Multiple Assigned Areas)
   const [editingStaffUser, setEditingStaffUser] = useState<User | null>(null);
   const [editStaffName, setEditStaffName] = useState('');
   const [editStaffPhone, setEditStaffPhone] = useState('');
   const [editStaffDesignation, setEditStaffDesignation] = useState('');
   const [editStaffDepartment, setEditStaffDepartment] = useState('');
-  const [editStaffArea, setEditStaffArea] = useState('');
-  const [editStaffShelter, setEditStaffShelter] = useState('');
+  const [editSelectedAreas, setEditSelectedAreas] = useState<string[]>([]);
 
-  // New staff form state
+  // New staff form state (with multi-select Assigned Areas)
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [newDesignation, setNewDesignation] = useState<string>(STANDARD_LEEDO_DESIGNATIONS[7]?.designation || 'Social Mobilizer');
   const [newDepartment, setNewDepartment] = useState('Outreach & Social Mobilization');
   const [newRole, setNewRole] = useState<UserRole>('Field Officer / Case Worker');
-  const [newShelter, setNewShelter] = useState<ShelterName | ''>('');
-  const [newArea, setNewArea] = useState<RescueArea | ''>('Airport');
+  const [newSelectedAreas, setNewSelectedAreas] = useState<string[]>(['Airport SUS']);
   const [newPhone, setNewPhone] = useState('+880 1');
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -92,10 +88,14 @@ export const UsersView: React.FC = () => {
     const mapping = getRoleAndPermissionsByDesignation(des);
     setNewRole(mapping.role);
     setNewDepartment(mapping.department);
-    if (mapping.role === 'Shelter Staff' && !newShelter) {
-      setNewShelter('Kamalapur Shelter');
+    if (mapping.role === 'Shelter Staff') {
+      if (!newSelectedAreas.some(a => a.includes('Shelter'))) {
+        setNewSelectedAreas(prev => [...prev.filter(a => !a.includes('Shelter')), 'Kamalapur Shelter']);
+      }
     } else if (mapping.role === 'Peace Home Staff') {
-      setNewShelter('LEEDO Peace Home');
+      if (!newSelectedAreas.includes('LEEDO Peace Home')) {
+        setNewSelectedAreas(prev => [...prev, 'LEEDO Peace Home']);
+      }
     }
   };
 
@@ -127,6 +127,9 @@ export const UsersView: React.FC = () => {
     const empCount = users.length + 1;
     const formattedEmpId = `EMP-${empCount < 10 ? '00' : empCount < 100 ? '0' : ''}${empCount}`;
 
+    const areasList = newSelectedAreas.length > 0 ? newSelectedAreas : ['Airport SUS'];
+    const shelterFound = areasList.find(a => a.includes('Shelter') || a.includes('Peace Home'));
+
     const newUser: User = {
       id: `USR-${Date.now().toString().slice(-4)}`,
       employeeId: formattedEmpId,
@@ -137,8 +140,9 @@ export const UsersView: React.FC = () => {
       department: newDepartment || roleMapping.department,
       password: '••••••••',
       hasCustomPassword: false,
-      assignedShelter: newShelter ? (newShelter as ShelterName) : undefined,
-      assignedArea: newArea ? (newArea as RescueArea) : undefined,
+      assignedAreas: areasList,
+      assignedArea: areasList.join(', '),
+      assignedShelter: shelterFound || (areasList.includes('Head Office / Central') ? 'All' : undefined),
       phone: newPhone.trim(),
       status: 'Active',
       joinedDate: new Date().toISOString().split('T')[0],
@@ -156,6 +160,7 @@ export const UsersView: React.FC = () => {
     setShowAddModal(false);
     setNewName('');
     setNewEmail('');
+    setNewSelectedAreas(['Airport SUS']);
     setSuccessMsg(
       language === 'bn'
         ? `নতুন কর্মী ${newUser.name} (${newUser.designation}) সফলভাবে যুক্ত হয়েছেন! প্রথম লগইনে ডিফল্ট পাসওয়ার্ড (123456) ব্যবহার করে ব্যক্তিগত পাসওয়ার্ড নির্ধারণ করতে হবে।`
@@ -196,8 +201,8 @@ export const UsersView: React.FC = () => {
     setEditStaffPhone(u.phone || '');
     setEditStaffDesignation(u.designation || '');
     setEditStaffDepartment(u.department || '');
-    setEditStaffArea(u.assignedArea || 'Airport');
-    setEditStaffShelter(u.assignedShelter || '');
+    const userAreas = getUserAssignedAreasList(u);
+    setEditSelectedAreas(userAreas.length > 0 ? userAreas : ['Airport SUS']);
   };
 
   const handleSaveStaffDetails = (e: React.FormEvent) => {
@@ -206,6 +211,8 @@ export const UsersView: React.FC = () => {
     
     // Auto sync role if designation changed to a standard LEEDO designation
     const mapped = editStaffDesignation ? getRoleAndPermissionsByDesignation(editStaffDesignation) : null;
+    const areasList = editSelectedAreas.length > 0 ? editSelectedAreas : ['Airport SUS'];
+    const shelterFound = areasList.find(a => a.includes('Shelter') || a.includes('Peace Home'));
 
     updateUser(editingStaffUser.id, {
       name: editStaffName.trim(),
@@ -213,32 +220,17 @@ export const UsersView: React.FC = () => {
       designation: editStaffDesignation.trim(),
       department: editStaffDepartment.trim() || (mapped ? mapped.department : editingStaffUser.department),
       role: mapped ? mapped.role : editingStaffUser.role,
-      assignedArea: editStaffArea as any,
-      assignedShelter: editStaffShelter as any,
+      assignedAreas: areasList,
+      assignedArea: areasList.join(', '),
+      assignedShelter: shelterFound || (areasList.includes('Head Office / Central') ? 'All' : ''),
     });
     setEditingStaffUser(null);
     setSuccessMsg(
       language === 'bn'
-        ? `"${editStaffName}" এর নাম, পদবী ও মোবাইল নম্বর সফলভাবে আপডেট হয়েছে!`
+        ? `"${editStaffName}" এর নাম, পদবী, মোবাইল নম্বর ও অ্যাসাইনড এরিয়া সফলভাবে আপডেট হয়েছে!`
         : `Staff information for "${editStaffName}" updated successfully!`
     );
     setTimeout(() => setSuccessMsg(''), 4000);
-  };
-
-  const handleExecuteWipeDemoData = () => {
-    if (!isHrOrKantaUser) {
-      alert(language === 'bn' ? 'শুধুমাত্র এইচআর ও কান্তা আপা ডেমো ডেটা মুছতে পারেন।' : 'Only HR and Murshida Akhter Kanta are authorized to wipe demo data.');
-      return;
-    }
-    wipeAllDemoData();
-    setShowWipeModal(false);
-    setWipeConfirmText('');
-    setSuccessMsg(
-      language === 'bn'
-        ? 'সকল ডেমো শিশু কেস, এসইউএস আউটরিচ সেশন ও ভিটিসি প্রশিক্ষণার্থী সফলভাবে মুছে ফেলা হয়েছে! ডাটাবেজ এখন সম্পূর্ণরূপে পরিষ্কার।'
-        : 'All demo children, SUS sessions, and VTC student records have been wiped clean! Database is now fresh.'
-    );
-    setTimeout(() => setSuccessMsg(''), 6000);
   };
 
   const handleConfirmResetPassword = () => {
@@ -302,24 +294,12 @@ export const UsersView: React.FC = () => {
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
               {language === 'bn'
-                ? 'কর্মী তালিকা, পদবী, শেল্টার/আউটপোস্ট অ্যাসাইনমেন্ট এবং কার কি এক্সেস থাকবে (ডিলিট/আপডেট/ইনপুট) তা পরিচালনা করুন।'
-                : 'Manage personnel credentials, shelter & outpost area assignments, role permissions, and access rules.'}
+                ? 'কর্মী তালিকা, পদবী, শেল্টার/এসইউএস এরিয়া অ্যাসাইনমেন্ট এবং কার কি এক্সেস থাকবে তা পরিচালনা করুন।'
+                : 'Manage personnel credentials, shelter & SUS area assignments, role permissions, and access rules.'}
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2 shrink-0">
-            {/* Wipe Demo Data Button - STRICTLY restricted to HR and Murshida Akhter Kanta */}
-            {isHrOrKantaUser && (
-              <button
-                onClick={() => setShowWipeModal(true)}
-                className="flex items-center gap-1.5 px-3.5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold rounded-xl shadow-2xs transition-colors cursor-pointer"
-                title={language === 'bn' ? 'শুধুমাত্র এইচআর ও কান্তা আপার অনুমোদনে ডেটা মোছা যাবে' : 'Strictly restricted to HR & Murshida Akhter Kanta'}
-              >
-                <Trash2 className="w-4 h-4 text-rose-600" />
-                <span>{language === 'bn' ? 'ডেমো ডেটা মুছুন' : 'Wipe Demo Data'}</span>
-              </button>
-            )}
-
             <button
               onClick={() => setShowAddModal(true)}
               className="flex items-center gap-2 px-4 py-2.5 bg-[#E31B23] hover:bg-[#c9151d] text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
@@ -327,25 +307,6 @@ export const UsersView: React.FC = () => {
               <Plus className="w-4 h-4" />
               <span>{language === 'bn' ? 'নতুন কর্মী যুক্ত করুন' : 'Add New Employee'}</span>
             </button>
-          </div>
-        </div>
-
-        {/* Access Rule Summary Banner */}
-        <div className="mt-4 p-3.5 bg-amber-50/80 border border-amber-200 rounded-xl flex items-start gap-3">
-          <Shield className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
-          <div className="text-xs text-slate-700 leading-relaxed">
-            <span className="font-bold text-amber-900">
-              {language === 'bn' ? 'কার্যকর অ্যাক্সেস নিয়মাবলী:' : 'Active Authorization Rules:'}
-            </span>{' '}
-            {language === 'bn' ? (
-              <span>
-                মাঠ পর্যায়ের কর্মীরা শুধুমাত্র <strong>নতুন শিশু রেসকিউ ডাটা ইনপুট</strong> ও <strong>তথ্য আপডেট</strong> করতে পারবেন, কোনো কিছু <strong>ডিলিট করতে পারবেন না</strong>। হেড অফিস ও এইচআর কর্মকর্তাদের <strong>ডিলিট সহ সম্পূর্ণ অ্যাক্সেস</strong> রয়েছে। এইচআর যেকোনো কর্মীর অ্যাক্সেস পারমিশন কাস্টমাইজ করতে পারেন।
-              </span>
-            ) : (
-              <span>
-                Field staff are restricted to <strong>new rescue inputs</strong> and <strong>updates only</strong> (deletion disabled). Head Office and HR hold <strong>full deletion and governance authority</strong>. HR administrators can configure individual permissions below.
-              </span>
-            )}
           </div>
         </div>
 
@@ -371,7 +332,7 @@ export const UsersView: React.FC = () => {
             <option value="Head Office Staff">Head Office Staff</option>
             <option value="Shelter Staff">Shelter Staff (Kamalapur / Kadamtali)</option>
             <option value="Peace Home Staff">Peace Home Staff</option>
-            <option value="Rescue Worker / Outpost Staff">Rescue Worker / Outpost Staff</option>
+            <option value="Rescue Worker / Outpost Staff">Rescue Worker / SUS Staff</option>
             <option value="Field Officer / Case Worker">Field Officer / Case Worker</option>
           </select>
 
@@ -468,20 +429,40 @@ export const UsersView: React.FC = () => {
                 </div>
 
                 {/* Details Section */}
-                <div className="mt-3 pt-2 text-xs text-slate-600 space-y-1.5">
-                  {user.assignedShelter && (
-                    <div className="flex items-center gap-1.5">
-                      <Building2 className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                      <span>{language === 'bn' ? 'শেল্টার:' : 'Shelter:'} <strong>{user.assignedShelter}</strong></span>
-                    </div>
-                  )}
-
-                  {user.assignedArea && (
-                    <div className="flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                      <span>{language === 'bn' ? 'আউটপোস্ট এরিয়া:' : 'Rescue Area:'} <strong>{user.assignedArea}</strong></span>
-                    </div>
-                  )}
+                <div className="mt-3 pt-2 text-xs text-slate-600 space-y-2">
+                  {(() => {
+                    const areas = getUserAssignedAreasList(user);
+                    return (
+                      <div>
+                        <div className="flex items-center gap-1.5 text-slate-700 font-semibold mb-1">
+                          <MapPin className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                          <span>{language === 'bn' ? 'অ্যাসাইনড এরিয়া:' : 'Assigned Area:'}</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1 pl-5">
+                          {areas.length > 0 ? (
+                            areas.map((a, i) => (
+                              <span
+                                key={i}
+                                className={`px-2 py-0.5 text-[10px] font-bold rounded-md border ${
+                                  a.includes('Shelter')
+                                    ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                    : a.includes('SUS')
+                                    ? 'bg-amber-50 text-amber-800 border-amber-200'
+                                    : a.includes('Vocational')
+                                    ? 'bg-purple-50 text-purple-700 border-purple-200'
+                                    : 'bg-slate-100 text-slate-700 border-slate-200'
+                                }`}
+                              >
+                                {a}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-[10px] text-slate-400 italic">Head Office / Central</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   <div className="flex items-center gap-1.5 text-slate-500">
                     <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
@@ -738,84 +719,6 @@ export const UsersView: React.FC = () => {
         </div>
       )}
 
-      {/* Wipe Demo Data Confirmation Modal */}
-      {showWipeModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-rose-200 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center gap-3 text-rose-600 mb-3">
-              <div className="w-10 h-10 rounded-2xl bg-rose-100 flex items-center justify-center shrink-0">
-                <AlertTriangle className="w-6 h-6 text-rose-600" />
-              </div>
-              <div>
-                <h3 className="font-bold text-base text-slate-900">
-                  {language === 'bn' ? 'সকল ডেমো ডেটা মুছে ফেলুন' : 'Wipe All Demo Data'}
-                </h3>
-                <p className="text-xs text-rose-600 font-semibold">
-                  {language === 'bn' ? 'এইচআর কেন্দ্রীয় ক্লিন-আপ ব্যবস্থা' : 'HR Centralized Clean-up Utility'}
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-rose-50 border border-rose-200 p-3.5 rounded-2xl text-xs text-rose-900 space-y-2 mb-4">
-              <p className="font-semibold">
-                {language === 'bn'
-                  ? 'এই অপারেশনের মাধ্যমে নিচের সকল পরীক্ষামূলক ডেমো ডেটা মুছে ফেলা হবে:'
-                  : 'This action will permanently delete all demo records from memory & storage:'}
-              </p>
-              <ul className="list-disc list-inside space-y-1 text-slate-700 text-[11px]">
-                <li>{language === 'bn' ? `নিবন্ধিত ডেমো শিশু সংখ্যা:` : 'Demo Children Cases:'} <strong>{children.length}</strong></li>
-                <li>{language === 'bn' ? `এসইউএস স্ট্রিট আউটরিচ সেশন:` : 'SUS Outreach Sessions:'} <strong>{susSessions.length}</strong></li>
-                <li>{language === 'bn' ? `ভিটিসি কারিগরি প্রশিক্ষণার্থী:` : 'VTC Vocational Students:'} <strong>{vtcStudents.length}</strong></li>
-              </ul>
-              <p className="text-[11px] text-slate-600 pt-1">
-                {language === 'bn'
-                  ? '⚠️ নোট: আপনার কর্মচারীদের অ্যাকাউন্ট ও শেল্টারের সেটআপ অক্ষত থাকবে। কেবল শিশুদের রেকর্ড খালি হয়ে নতুন বাস্তব কেস এন্ট্রির জন্য প্রস্তুত হবে।'
-                  : '⚠️ Note: Staff accounts and shelter setups will remain intact. The child database will be completely clean for live rescue intake.'}
-              </p>
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                {language === 'bn' ? 'নিশ্চিত করতে "DELETE" টাইপ করুন:' : 'Type "DELETE" to confirm:'}
-              </label>
-              <input
-                type="text"
-                value={wipeConfirmText}
-                onChange={(e) => setWipeConfirmText(e.target.value)}
-                placeholder="DELETE"
-                className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-mono font-bold uppercase focus:ring-2 focus:ring-rose-500"
-              />
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowWipeModal(false);
-                  setWipeConfirmText('');
-                }}
-                className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-semibold cursor-pointer"
-              >
-                {language === 'bn' ? 'বাতিল' : 'Cancel'}
-              </button>
-              <button
-                type="button"
-                disabled={wipeConfirmText !== 'DELETE'}
-                onClick={handleExecuteWipeDemoData}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                  wipeConfirmText === 'DELETE'
-                    ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-sm'
-                    : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                }`}
-              >
-                <Trash2 className="w-4 h-4" />
-                <span>{language === 'bn' ? 'সব ডেমো ডেটা মুছুন' : 'Wipe Clean Now'}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Add Employee Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
@@ -919,49 +822,77 @@ export const UsersView: React.FC = () => {
                 >
                   <option value="Super Admin">Super Admin (Full Organization Access)</option>
                   <option value="Head Office Staff">Head Office Staff (Full Delete & Update)</option>
+                  <option value="Program Coordinator">Program Coordinator (Full Operations Oversight)</option>
                   <option value="Shelter Staff">Shelter Staff (Transitional Shelter - Update Only)</option>
                   <option value="Peace Home Staff">Peace Home Staff (Peace Home Care - Update Only)</option>
-                  <option value="Rescue Worker / Outpost Staff">Rescue Worker / Outpost Staff (Field Rescue - Input & Update Only)</option>
-                  <option value="Field Officer / Case Worker">Field Officer / Case Worker (Field Operations - Input & Update Only)</option>
+                  <option value="Rescue Worker / Outpost Staff">Rescue Worker / SUS Staff (Field Rescue & SUS)</option>
+                  <option value="Field Officer / Case Worker">Field Officer / Case Worker (Field Operations)</option>
                 </select>
               </div>
 
-              {/* Conditional Shelter / Outpost Area assignments */}
-              {(newRole === 'Shelter Staff' || newRole === 'Peace Home Staff') && (
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Assigned Shelter Facility</label>
-                  <select
-                    value={newShelter}
-                    onChange={(e) => setNewShelter(e.target.value as ShelterName)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500 bg-white"
-                  >
-                    <option value="">Select Facility...</option>
-                    <option value="Kamalapur Shelter">Kamalapur Shelter (Cap: 30)</option>
-                    <option value="Kadamtali Shelter">Kadamtali Shelter (Cap: 30)</option>
-                    <option value="LEEDO Peace Home">LEEDO Peace Home (Cap: 100)</option>
-                  </select>
+              {/* Multi-Select Assigned Areas */}
+              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="font-bold text-slate-800 flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-rose-600" />
+                    <span>{language === 'bn' ? 'অ্যাসাইনড এরিয়া (Assigned Area) *' : 'Assigned Area *'}</span>
+                  </label>
+                  <span className="text-[11px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                    {newSelectedAreas.length} {language === 'bn' ? 'টি নির্বাচিত' : 'Selected'}
+                  </span>
                 </div>
-              )}
-
-              {(newRole === 'Rescue Worker / Outpost Staff' || newRole === 'Field Officer / Case Worker') && (
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Assigned Outreach Area / Outpost</label>
-                  <select
-                    value={newArea}
-                    onChange={(e) => setNewArea(e.target.value as RescueArea)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500 bg-white"
-                  >
-                    <option value="Airport">Airport Outpost</option>
-                    <option value="Mirpur">Mirpur Outpost</option>
-                    <option value="Tejgaon">Tejgaon Outpost</option>
-                    <option value="Rayerbazar">Rayerbazar Outpost</option>
-                    <option value="Kamalapur">Kamalapur Station Outpost</option>
-                    <option value="Kadamtali">Kadamtali Outpost</option>
-                    <option value="Sadarghat">Sadarghat Launch Terminal</option>
-                    <option value="Shambazar">Shambazar Area</option>
-                  </select>
+                <p className="text-[11px] text-slate-500 mb-2">
+                  {language === 'bn'
+                    ? 'কর্মীর কাজের জন্য এক বা একাধিক এরিয়া নির্বাচন করুন (ক্লিক করে নির্বাচন/বাতিল করুন):'
+                    : 'Select one or more operational areas/centers for this staff member (click to toggle):'}
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-48 overflow-y-auto pr-1">
+                  {LEEDO_OPERATIONAL_AREAS.map((area) => {
+                    const isSelected = newSelectedAreas.includes(area);
+                    return (
+                      <button
+                        key={area}
+                        type="button"
+                        onClick={() => {
+                          if (isSelected) {
+                            setNewSelectedAreas(prev => prev.filter(a => a !== area));
+                          } else {
+                            setNewSelectedAreas(prev => [...prev, area]);
+                          }
+                        }}
+                        className={`flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-[11px] font-semibold text-left transition-all cursor-pointer border ${
+                          isSelected
+                            ? 'bg-[#E31B23] text-white border-[#E31B23] shadow-xs'
+                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+                        }`}
+                      >
+                        <div className={`w-3.5 h-3.5 rounded flex items-center justify-center shrink-0 border ${
+                          isSelected ? 'bg-white text-[#E31B23] border-white' : 'border-slate-300 bg-slate-50'
+                        }`}>
+                          {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                        </div>
+                        <span className="truncate">{area}</span>
+                      </button>
+                    );
+                  })}
                 </div>
-              )}
+                <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-200/60 text-[11px]">
+                  <button
+                    type="button"
+                    onClick={() => setNewSelectedAreas([...LEEDO_OPERATIONAL_AREAS])}
+                    className="text-rose-600 hover:underline cursor-pointer font-bold"
+                  >
+                    {language === 'bn' ? 'সব নির্বাচন করুন (All)' : 'Select All'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewSelectedAreas([])}
+                    className="text-slate-500 hover:underline cursor-pointer font-medium"
+                  >
+                    {language === 'bn' ? 'রিসেট (Clear)' : 'Clear All'}
+                  </button>
+                </div>
+              </div>
 
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">Contact Phone Number</label>
@@ -1075,42 +1006,67 @@ export const UsersView: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    {language === 'bn' ? 'অ্যাসাইনড আউটপোস্ট / এরিয়া' : 'Assigned Outpost Area'}
+              {/* Multi-Select Assigned Areas */}
+              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="font-bold text-slate-800 flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-rose-600" />
+                    <span>{language === 'bn' ? 'অ্যাসাইনড এরিয়া (Assigned Area) *' : 'Assigned Area *'}</span>
                   </label>
-                  <select
-                    value={editStaffArea}
-                    onChange={(e) => setEditStaffArea(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white"
-                  >
-                    <option value="Airport">Airport Outpost</option>
-                    <option value="Mirpur">Mirpur Outpost</option>
-                    <option value="Tejgaon">Tejgaon Outpost</option>
-                    <option value="Rayer Bazar">Rayer Bazar Outpost</option>
-                    <option value="Kamalapur">Kamalapur Station Outpost</option>
-                    <option value="Sadarghat">Sadarghat Launch Terminal</option>
-                    <option value="Shambazar">Shambazar Area</option>
-                    <option value="Other">Other Location</option>
-                  </select>
+                  <span className="text-[11px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                    {editSelectedAreas.length} {language === 'bn' ? 'টি নির্বাচিত' : 'Selected'}
+                  </span>
                 </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    {language === 'bn' ? 'অ্যাসাইনড শেল্টার' : 'Assigned Shelter'}
-                  </label>
-                  <select
-                    value={editStaffShelter}
-                    onChange={(e) => setEditStaffShelter(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-xl bg-white"
+                <p className="text-[11px] text-slate-500 mb-2.5">
+                  {language === 'bn'
+                    ? 'কর্মীর জন্য এক বা একাধিক এরিয়া নির্বাচন করুন (ক্লিক করে নির্বাচন/বাতিল করুন):'
+                    : 'Select one or more operational areas/centers for this staff member (click to toggle):'}
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-48 overflow-y-auto pr-1">
+                  {LEEDO_OPERATIONAL_AREAS.map((area) => {
+                    const isSelected = editSelectedAreas.includes(area);
+                    return (
+                      <button
+                        key={area}
+                        type="button"
+                        onClick={() => {
+                          if (isSelected) {
+                            setEditSelectedAreas(prev => prev.filter(a => a !== area));
+                          } else {
+                            setEditSelectedAreas(prev => [...prev, area]);
+                          }
+                        }}
+                        className={`flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-[11px] font-semibold text-left transition-all cursor-pointer border ${
+                          isSelected
+                            ? 'bg-[#E31B23] text-white border-[#E31B23] shadow-xs'
+                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+                        }`}
+                      >
+                        <div className={`w-3.5 h-3.5 rounded flex items-center justify-center shrink-0 border ${
+                          isSelected ? 'bg-white text-[#E31B23] border-white' : 'border-slate-300 bg-slate-50'
+                        }`}>
+                          {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                        </div>
+                        <span className="truncate">{area}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-200/60 text-[11px]">
+                  <button
+                    type="button"
+                    onClick={() => setEditSelectedAreas([...LEEDO_OPERATIONAL_AREAS])}
+                    className="text-rose-600 hover:underline cursor-pointer font-bold"
                   >
-                    <option value="">None / Not Applicable</option>
-                    <option value="Kamalapur Shelter">Kamalapur Shelter</option>
-                    <option value="Kadamtali Shelter">Kadamtali Shelter</option>
-                    <option value="LEEDO Peace Home">LEEDO Peace Home</option>
-                    <option value="All">All Facilities</option>
-                  </select>
+                    {language === 'bn' ? 'সব নির্বাচন করুন (All)' : 'Select All'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditSelectedAreas([])}
+                    className="text-slate-500 hover:underline cursor-pointer font-medium"
+                  >
+                    {language === 'bn' ? 'রিসেট (Clear)' : 'Clear All'}
+                  </button>
                 </div>
               </div>
 
