@@ -430,16 +430,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
           </div>
 
-          {/* Direct Quick Profile Edit button */}
-          <button
-            onClick={() => setEditProfileOpen(true)}
-            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:text-[#E31B23] hover:bg-rose-50 rounded-xl border border-slate-200 transition-colors cursor-pointer"
-            title={language === 'bn' ? 'ব্যক্তিগত প্রোফাইল এডিট (ছবি ও ফোন নম্বর)' : 'Edit Personal Profile'}
-          >
-            <UserCog className="w-3.5 h-3.5 text-[#E31B23]" />
-            <span>{language === 'bn' ? 'প্রোফাইল' : 'Profile'}</span>
-          </button>
-
           {/* Logged-in User's Private ID Badge & Profile Card */}
           <div className="relative">
             <button
@@ -544,18 +534,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
             )}
           </div>
-
-          {/* Direct Quick Logout button */}
-          {onLogout && (
-            <button
-              onClick={onLogout}
-              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:text-rose-600 hover:bg-rose-50 rounded-lg border border-slate-200 transition-colors cursor-pointer"
-              title={language === 'bn' ? 'লগআউট করে লগইন স্ক্রিনে ফিরুন' : 'Log out and return to login screen'}
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span>{language === 'bn' ? 'লগআউট' : 'Logout'}</span>
-            </button>
-          )}
         </div>
       </div>
 

@@ -69,9 +69,40 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === 'string') {
-        setAvatarUrl(reader.result);
-        setIsUploading(false);
-        setErrorMsg('');
+        const raw = reader.result;
+        const img = new Image();
+        img.onload = () => {
+          let width = img.width;
+          let height = img.height;
+          const maxDim = 256;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            setAvatarUrl(canvas.toDataURL('image/jpeg', 0.85));
+          } else {
+            setAvatarUrl(raw);
+          }
+          setIsUploading(false);
+          setErrorMsg('');
+        };
+        img.onerror = () => {
+          setAvatarUrl(raw);
+          setIsUploading(false);
+          setErrorMsg('');
+        };
+        img.src = raw;
       }
     };
     reader.onerror = () => {

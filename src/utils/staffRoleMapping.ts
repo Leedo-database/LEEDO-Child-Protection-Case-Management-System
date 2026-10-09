@@ -293,11 +293,13 @@ export function getRoleAndPermissionsByDesignation(designation: string): {
   };
 }
 
-export function isUserHrOrKanta(user?: { email?: string; employeeId?: string; name?: string } | null): boolean {
+export function isUserHrOrKanta(user?: { email?: string; employeeId?: string; name?: string; role?: string; designation?: string; permissions?: StaffPermissions } | null): boolean {
   if (!user) return false;
   const email = (user.email || '').toLowerCase().trim();
   const empId = (user.employeeId || '').trim();
   const name = (user.name || '').toLowerCase().trim();
+  const role = (user.role || '').toLowerCase().trim();
+  const desig = (user.designation || '').toLowerCase().trim();
 
   return (
     email === 'hr.leedo2000@gmail.com' ||
@@ -305,6 +307,12 @@ export function isUserHrOrKanta(user?: { email?: string; employeeId?: string; na
     empId === '1002' ||
     empId === '1057' ||
     name.includes('kanta') ||
-    name.includes('omar faruque')
+    name.includes('omar faruque') ||
+    desig.includes('hr') ||
+    desig.includes('human resource') ||
+    desig.includes('admin') ||
+    user.permissions?.canManageHR === true ||
+    role === 'super admin' ||
+    role === 'head office staff'
   );
 }

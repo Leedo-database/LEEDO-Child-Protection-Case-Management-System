@@ -23,7 +23,8 @@ import {
   Sliders,
   AlertTriangle,
   Edit3,
-  ShieldCheck
+  ShieldCheck,
+  Image as ImageIcon
 } from 'lucide-react';
 import { useApp, MASTER_HR_EMAIL } from '../../context/AppContext';
 import { User, UserRole, StaffStatus, ShelterName, RescueArea, StaffPermissions } from '../../types';
@@ -46,7 +47,8 @@ export const UsersView: React.FC = () => {
     vtcStudents,
     language,
     isHrOrKantaUser,
-    resetUserPassword
+    resetUserPassword,
+    setActiveView
   } = useApp();
 
   const [filterRole, setFilterRole] = useState<string>('all');
@@ -300,6 +302,15 @@ export const UsersView: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <button
+              onClick={() => setActiveView('settings')}
+              className="flex items-center gap-2 px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl transition-colors cursor-pointer border border-slate-200"
+              title={language === 'bn' ? 'সিস্টেম সেটিংস থেকে প্রতিষ্ঠানের অফিশিয়াল ব্র্যান্ড লোগো পরিবর্তন করুন' : 'Change official brand logo in settings'}
+            >
+              <ImageIcon className="w-4 h-4 text-[#E31B23]" />
+              <span>{language === 'bn' ? 'প্রতিষ্ঠানের লোগো পরিবর্তন' : 'Change Organization Logo'}</span>
+            </button>
+
             <button
               onClick={() => setShowAddModal(true)}
               className="flex items-center gap-2 px-4 py-2.5 bg-[#E31B23] hover:bg-[#c9151d] text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"

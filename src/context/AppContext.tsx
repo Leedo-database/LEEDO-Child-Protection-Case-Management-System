@@ -568,7 +568,83 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
         }
       }
     }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'users');
+      console.warn('Users listener:', error);
+    });
+
+    // 6. Shelters collection listener
+    const unsubShelters = onSnapshot(collection(db, 'shelters'), (snapshot) => {
+      if (!snapshot.empty) {
+        const firestoreShelters: ShelterInfo[] = [];
+        snapshot.forEach((d) => {
+          const s = d.data() as ShelterInfo;
+          if (s && s.id) {
+            firestoreShelters.push(s);
+          }
+        });
+        if (firestoreShelters.length > 0) {
+          setShelters((prev) => {
+            const map = new Map<string, ShelterInfo>();
+            OFFICIAL_LEEDO_SHELTERS.forEach(s => map.set(s.id, s));
+            prev.forEach(s => map.set(s.id, s));
+            firestoreShelters.forEach(s => map.set(s.id, s));
+            const merged = Array.from(map.values());
+            localStorage.setItem(STORAGE_KEYS.SHELTERS, JSON.stringify(merged));
+            return merged;
+          });
+        }
+      }
+    }, (error) => {
+      console.warn('Shelters listener:', error);
+    });
+
+    // 7. Third-Party Shelters listener
+    const unsubThirdParty = onSnapshot(collection(db, 'thirdPartyShelters'), (snapshot) => {
+      if (!snapshot.empty) {
+        const firestoreThirdParty: ThirdPartyShelter[] = [];
+        snapshot.forEach((d) => {
+          const s = d.data() as ThirdPartyShelter;
+          if (s && s.id) {
+            firestoreThirdParty.push(s);
+          }
+        });
+        if (firestoreThirdParty.length > 0) {
+          setThirdPartyShelters((prev) => {
+            const map = new Map<string, ThirdPartyShelter>();
+            prev.forEach(s => map.set(s.id, s));
+            firestoreThirdParty.forEach(s => map.set(s.id, s));
+            const merged = Array.from(map.values());
+            localStorage.setItem(STORAGE_KEYS.THIRD_PARTY_SHELTERS, JSON.stringify(merged));
+            return merged;
+          });
+        }
+      }
+    }, (error) => {
+      console.warn('ThirdParty listener:', error);
+    });
+
+    // 8. Staff Notifications listener
+    const unsubNotifs = onSnapshot(collection(db, 'notifications'), (snapshot) => {
+      if (!snapshot.empty) {
+        const firestoreNotifs: StaffNotification[] = [];
+        snapshot.forEach((d) => {
+          const n = d.data() as StaffNotification;
+          if (n && n.id && !DEMO_NOTIF_IDS.has(n.id)) {
+            firestoreNotifs.push(n);
+          }
+        });
+        if (firestoreNotifs.length > 0) {
+          setNotifications((prev) => {
+            const map = new Map<string, StaffNotification>();
+            prev.forEach(n => map.set(n.id, n));
+            firestoreNotifs.forEach(n => map.set(n.id, n));
+            const merged = Array.from(map.values()).sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+            localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(merged));
+            return merged;
+          });
+        }
+      }
+    }, (error) => {
+      console.warn('Notifications listener:', error);
     });
 
     return () => {
@@ -577,6 +653,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
       unsubSUS();
       unsubVTC();
       unsubUsers();
+      unsubShelters();
+      unsubThirdParty();
+      unsubNotifs();
     };
   }, []);
 
@@ -856,6 +935,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
     addAuditEntry('UPDATE_CHILD_INFO', id, logDetails || `Updated child profile fields for ${id}`);
   };
 
+  const syncChildToCloud = (childId: string, updated: Child) => {
+    setDoc(doc(db, 'children', childId), updated, { merge: true }).catch((e) =>
+      console.warn('Cloud child sync:', e)
+    );
+  };
+
   const addCaseNote = (childId: string, note: string, isConfidential: boolean) => {
     const today = getTodayDateString();
     const newNote: CaseNote = {
@@ -870,11 +955,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
     setChildrenList((prev) =>
       prev.map((c) => {
         if (c.id === childId) {
-          return {
+          const updated: Child = {
             ...c,
             caseNotes: [newNote, ...c.caseNotes],
             updatedAt: new Date().toISOString(),
           };
+          syncChildToCloud(childId, updated);
+          return updated;
         }
         return c;
       })
@@ -892,7 +979,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
     setChildrenList((prev) =>
       prev.map((c) => {
         if (c.id === childId) {
-          return {
+          const updated: Child = {
             ...c,
             healthRecords: [newRecord, ...c.healthRecords],
             timeline: [
@@ -908,6 +995,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
             ],
             updatedAt: new Date().toISOString(),
           };
+          syncChildToCloud(childId, updated);
+          return updated;
         }
         return c;
       })
@@ -925,7 +1014,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
     setChildrenList((prev) =>
       prev.map((c) => {
         if (c.id === childId) {
-          return {
+          const updated: Child = {
             ...c,
             counselingRecords: [newRecord, ...c.counselingRecords],
             timeline: [
@@ -941,6 +1030,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
             ],
             updatedAt: new Date().toISOString(),
           };
+          syncChildToCloud(childId, updated);
+          return updated;
         }
         return c;
       })
@@ -962,7 +1053,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
             tracingStatus: newTracingStatus || c.familyTracing.tracingStatus,
             attempts: [newAttempt, ...c.familyTracing.attempts],
           };
-          return {
+          const updated: Child = {
             ...c,
             familyTracing: updatedTracing,
             timeline: [
@@ -978,6 +1069,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
             ],
             updatedAt: new Date().toISOString(),
           };
+          syncChildToCloud(childId, updated);
+          return updated;
         }
         return c;
       })
@@ -990,7 +1083,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
       prev.map((c) => {
         if (c.id === childId) {
           const merged = { ...c.familyInfo, ...familyInfo };
-          return {
+          const updated: Child = {
             ...c,
             familyInfo: merged,
             timeline: familyInfo.homeVisitDate
@@ -1008,6 +1101,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
               : c.timeline,
             updatedAt: new Date().toISOString(),
           };
+          syncChildToCloud(childId, updated);
+          return updated;
         }
         return c;
       })
@@ -1102,7 +1197,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
     setChildrenList((prev) =>
       prev.map((c) => {
         if (c.id === childId) {
-          return {
+          const updated: Child = {
             ...c,
             reintegration: data,
             caseStatus: 'Reintegrated',
@@ -1121,6 +1216,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
             ],
             updatedAt: new Date().toISOString(),
           };
+          syncChildToCloud(childId, updated);
+          return updated;
         }
         return c;
       })
@@ -1132,7 +1229,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
     setChildrenList((prev) =>
       prev.map((c) => {
         if (c.id === childId) {
-          return {
+          const updated: Child = {
             ...c,
             postReintegrationFollowUps: c.postReintegrationFollowUps.map((fu) => {
               if (fu.id === followUpId) {
@@ -1153,6 +1250,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
             ],
             updatedAt: new Date().toISOString(),
           };
+          syncChildToCloud(childId, updated);
+          return updated;
         }
         return c;
       })
@@ -1181,11 +1280,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
     setChildrenList((prev) =>
       prev.map((c) => {
         if (c.id === childId) {
-          return {
+          const updated: Child = {
             ...c,
             postReintegrationFollowUps: [...c.postReintegrationFollowUps, newFu],
             updatedAt: new Date().toISOString(),
           };
+          syncChildToCloud(childId, updated);
+          return updated;
         }
         return c;
       })
@@ -1228,7 +1329,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
     setChildrenList((prev) =>
       prev.map((c) => {
         if (c.id === childId) {
-          return {
+          const updated: Child = {
             ...c,
             referral,
             caseStatus: 'Government Shelter Referral',
@@ -1247,6 +1348,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
             ],
             updatedAt: new Date().toISOString(),
           };
+          syncChildToCloud(childId, updated);
+          return updated;
         }
         return c;
       })
@@ -1258,7 +1361,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
     setChildrenList((prev) =>
       prev.map((c) => {
         if (c.id === childId) {
-          return {
+          const updated: Child = {
             ...c,
             referralFollowUps: c.referralFollowUps.map((rfu) => {
               if (rfu.id === followUpId) {
@@ -1279,6 +1382,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
             ],
             updatedAt: new Date().toISOString(),
           };
+          syncChildToCloud(childId, updated);
+          return updated;
         }
         return c;
       })
@@ -1304,11 +1409,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
     setChildrenList((prev) =>
       prev.map((c) => {
         if (c.id === childId) {
-          return {
+          const updated: Child = {
             ...c,
             referralFollowUps: [...c.referralFollowUps, newFu],
             updatedAt: new Date().toISOString(),
           };
+          syncChildToCloud(childId, updated);
+          return updated;
         }
         return c;
       })
@@ -1320,7 +1427,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
     setChildrenList((prev) =>
       prev.map((c) => {
         if (c.id === childId) {
-          return {
+          const updated: Child = {
             ...c,
             leftWithoutNotice: data,
             caseStatus: 'Left Without Notice',
@@ -1338,6 +1445,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
             ],
             updatedAt: new Date().toISOString(),
           };
+          syncChildToCloud(childId, updated);
+          return updated;
         }
         return c;
       })
@@ -1355,7 +1464,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
             recoveryDate,
             recoveryNotes,
           };
-          return {
+          const updated: Child = {
             ...c,
             leftWithoutNotice: updatedLwn,
             caseStatus: 'Shelter Stay',
@@ -1373,6 +1482,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
             ],
             updatedAt: new Date().toISOString(),
           };
+          syncChildToCloud(childId, updated);
+          return updated;
         }
         return c;
       })
@@ -1391,11 +1502,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
     setChildrenList((prev) =>
       prev.map((c) => {
         if (c.id === childId) {
-          return {
+          const updated: Child = {
             ...c,
             documents: [newDoc, ...c.documents],
             updatedAt: new Date().toISOString(),
           };
+          syncChildToCloud(childId, updated);
+          return updated;
         }
         return c;
       })
@@ -1407,7 +1520,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
     setChildrenList((prev) =>
       prev.map((c) => {
         if (c.id === childId) {
-          return {
+          const updated: Child = {
             ...c,
             caseStatus: status,
             timeline: [
@@ -1423,6 +1536,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
             ],
             updatedAt: new Date().toISOString(),
           };
+          syncChildToCloud(childId, updated);
+          return updated;
         }
         return c;
       })
@@ -1436,12 +1551,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
       id: `sh-${Date.now()}`,
     };
     setShelters((prev) => [...prev, newShelter]);
+    setDoc(doc(db, 'shelters', newShelter.id), newShelter, { merge: true }).catch((e) => console.warn('Cloud shelter sync:', e));
     addAuditEntry('ADD_SHELTER', undefined, `Added new shelter facility: ${newShelter.name} (${newShelter.location})`);
   };
 
   const updateShelter = (id: string, updates: Partial<ShelterInfo>) => {
     setShelters((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, ...updates } : s))
+      prev.map((s) => {
+        if (s.id === id) {
+          const updated = { ...s, ...updates };
+          setDoc(doc(db, 'shelters', id), updated, { merge: true }).catch((e) => console.warn('Cloud shelter update:', e));
+          return updated;
+        }
+        return s;
+      })
     );
     addAuditEntry('UPDATE_SHELTER', undefined, `Updated shelter facility details for ID: ${id}`);
   };
@@ -1454,6 +1577,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
       return;
     }
     setShelters((prev) => prev.filter((s) => s.id !== id));
+    deleteDoc(doc(db, 'shelters', id)).catch((e) => console.warn('Cloud shelter delete:', e));
     addAuditEntry('DELETE_SHELTER', undefined, `Removed shelter facility ID: ${id}`);
   };
 
@@ -1549,7 +1673,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
     setChildrenList((prev) =>
       prev.map((c) => {
         if (c.id === childId) {
-          return { ...c, isArchived: true, updatedAt: new Date().toISOString() };
+          const updated: Child = { ...c, isArchived: true, updatedAt: new Date().toISOString() };
+          syncChildToCloud(childId, updated);
+          return updated;
         }
         return c;
       })
@@ -1757,6 +1883,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
         await setDoc(doc(db, 'shelters', sh.id), sh, { merge: true });
       }
 
+      // Sync third party shelters
+      for (const tps of thirdPartyShelters) {
+        await setDoc(doc(db, 'thirdPartyShelters', tps.id), tps, { merge: true });
+      }
+
+      // Sync notifications
+      for (const notif of notifications) {
+        await setDoc(doc(db, 'notifications', notif.id), notif, { merge: true });
+      }
+
       addAuditEntry('FIREBASE_CLOUD_SYNC', undefined, `Published full dataset to Firestore database (refined-axle-rlcf1). ${childrenList.length} children, ${usersList.length} staff, ${vtcStudents.length} VTC students.`);
       setIsSyncingFirebase(false);
       return {
@@ -1889,6 +2025,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
               ...permissions,
             },
           };
+          setDoc(doc(db, 'users', userId), updated, { merge: true }).catch((e) => console.warn('Cloud user perm sync:', e));
           if (currentUser.id === userId) {
             setCurrentUser(updated);
           }
@@ -1909,6 +2046,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
       prev.map((u) => {
         if (u.id === userId || (u.employeeId && u.employeeId === userId)) {
           const updated = { ...u, password: newPass.trim(), hasCustomPassword: true };
+          setDoc(doc(db, 'users', u.id), updated, { merge: true }).catch((e) => console.warn('Cloud pass sync:', e));
           if (currentUser.id === u.id) {
             setCurrentUser(updated);
           }
@@ -1932,6 +2070,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
       prev.map((u) => {
         if (u.id === userId || (u.employeeId && u.employeeId === userId)) {
           const updated = { ...u, password: '123456', hasCustomPassword: false };
+          setDoc(doc(db, 'users', u.id), updated, { merge: true }).catch((e) => console.warn('Cloud pass reset sync:', e));
           return updated;
         }
         return u;
@@ -1985,6 +2124,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
       createdAt: getTodayDateString(),
     };
     setThirdPartyShelters((prev) => [...prev, newShelter]);
+    setDoc(doc(db, 'thirdPartyShelters', newShelter.id), newShelter, { merge: true }).catch((e) => console.warn('Cloud 3p shelter sync:', e));
     addAuditEntry('ADD_THIRD_PARTY_SHELTER', undefined, `Added partner/government shelter directory entry: ${newShelter.name} (${newShelter.type})`);
     return newShelter;
   };
@@ -2058,16 +2198,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
       createdAt: getTodayDateString(),
     };
     setNotifications((prev) => [newNotif, ...prev]);
+    setDoc(doc(db, 'notifications', newNotif.id), newNotif, { merge: true }).catch((e) => console.warn('Cloud notif sync:', e));
   };
 
   const updateNotificationStatus = (id: string, status: StaffNotification['status']) => {
     setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, status } : n))
+      prev.map((n) => {
+        if (n.id === id) {
+          const up = { ...n, status };
+          setDoc(doc(db, 'notifications', id), up, { merge: true }).catch((e) => console.warn('Cloud notif update:', e));
+          return up;
+        }
+        return n;
+      })
     );
   };
 
   const deleteNotification = (id: string) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
+    deleteDoc(doc(db, 'notifications', id)).catch((e) => console.warn('Cloud notif delete:', e));
   };
 
   const assignCounselingTask = (data: {

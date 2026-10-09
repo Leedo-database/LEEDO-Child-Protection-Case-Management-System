@@ -72,8 +72,40 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     const reader = new FileReader();
     reader.onload = () => {
       const result = reader.result as string;
-      setPreviewLogo(result);
-      setUrlInput('');
+      // Optimize & scale down via canvas so it fits smoothly in Cloud Firestore (<100KB)
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+        const maxDim = 400;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const optimizedDataUrl = canvas.toDataURL('image/png', 0.9);
+          setPreviewLogo(optimizedDataUrl);
+          setUrlInput('');
+        } else {
+          setPreviewLogo(result);
+          setUrlInput('');
+        }
+      };
+      img.onerror = () => {
+        setPreviewLogo(result);
+        setUrlInput('');
+      };
+      img.src = result;
     };
     reader.readAsDataURL(file);
   };
