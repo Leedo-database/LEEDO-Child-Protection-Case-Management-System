@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { 
   X, 
-  Camera, 
-  Upload, 
+  Camera,
+  Upload,
   Sparkles, 
   ShieldCheck, 
   User, 
@@ -45,8 +45,21 @@ export const RegisterChildModal: React.FC<RegisterChildModalProps> = ({
   const [identificationInfo, setIdentificationInfo] = useState('');
   const [disabilityOrSpecialNeeds, setDisabilityOrSpecialNeeds] = useState('None');
   const [educationInformation, setEducationInformation] = useState('');
-  const [photoUrl, setPhotoUrl] = useState('https://images.unsplash.com/photo-1543332164-6e82f355badc?auto=format&fit=crop&q=80&w=400');
+  const [photoUrl, setPhotoUrl] = useState('');
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setPhotoPreview(result);
+        setPhotoUrl(result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   // Step 2: Rescue Details & GD
   const [rescueDate, setRescueDate] = useState(today);
@@ -83,19 +96,6 @@ export const RegisterChildModal: React.FC<RegisterChildModalProps> = ({
   const [roomOrBed, setRoomOrBed] = useState('Dormitory Bed Assigned');
 
   if (!isOpen) return null;
-
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        setPhotoPreview(result);
-        setPhotoUrl(result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
 
   const handleNext = () => {
     if (activeStep === 1) {
@@ -135,8 +135,8 @@ export const RegisterChildModal: React.FC<RegisterChildModalProps> = ({
       identificationInfo,
       disabilityOrSpecialNeeds,
       educationInformation,
-      photoUrl,
-      rescuePhotoUrl: photoUrl,
+      photoUrl: photoUrl || '',
+      rescuePhotoUrl: photoUrl || '',
 
       rescueDate,
       rescueTime,
@@ -269,36 +269,37 @@ export const RegisterChildModal: React.FC<RegisterChildModalProps> = ({
               {/* Photo & Basic Details */}
               <div className="flex flex-col sm:flex-row gap-5 items-start">
                 <div className="flex flex-col items-center gap-2 w-full sm:w-auto">
-                  <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-xl overflow-hidden border-2 border-dashed border-slate-300 bg-slate-100 relative flex items-center justify-center group">
-                    <img
-                      src={photoPreview || photoUrl}
-                      alt="Child"
-                      className="w-full h-full object-cover"
-                    />
-                    <label className="absolute inset-0 bg-black/40 text-white flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-xs">
-                      <Camera className="w-6 h-6 mb-1" />
-                      <span>Change Photo</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handlePhotoUpload}
-                        className="hidden"
-                      />
-                    </label>
+                  <div className="w-28 h-28 rounded-2xl bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden relative group">
+                    {photoPreview ? (
+                      <img src={photoPreview} alt="Child Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="text-center p-2 text-slate-400">
+                        <Camera className="w-8 h-8 mx-auto mb-1 text-slate-300" />
+                        <span className="text-[10px] font-medium block">Rescue Photo</span>
+                      </div>
+                    )}
                   </div>
-                  <label className="cursor-pointer text-xs font-semibold text-rose-600 hover:underline flex items-center gap-1">
+                  <label className="text-xs font-semibold text-[#E31B23] hover:text-rose-700 cursor-pointer flex items-center gap-1">
                     <Upload className="w-3.5 h-3.5" />
-                    <span>Upload Child Photo</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handlePhotoUpload}
-                      className="hidden"
-                    />
+                    <span>Upload Photo</span>
+                    <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
                   </label>
+                  {photoPreview && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPhotoPreview(null);
+                        setPhotoUrl('');
+                      }}
+                      className="text-[10px] text-slate-500 hover:text-rose-600 underline cursor-pointer"
+                    >
+                      Remove Photo
+                    </button>
+                  )}
                 </div>
 
-                <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3.5 w-full">
+                {/* Basic Details Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 flex-1 w-full">
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">
                       Child Name <span className="text-rose-600">*</span>

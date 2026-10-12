@@ -239,8 +239,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Option A: Upload from Device */}
+            <div className="space-y-4">
+              {/* Option 1: Upload from Device */}
               <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-3">
                 <div className="flex items-center gap-2 text-slate-800 font-bold text-xs">
                   <Upload className="w-4 h-4 text-[#E31B23]" />
@@ -251,39 +251,30 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     ? 'আপনার কম্পিউটার বা মোবাইল থেকে স্বচ্ছ ব্যাকগ্রাউন্ডের PNG বা SVG লোগো বেছে নিন (সর্বোচ্চ ২ মেগাবাইট)।'
                     : 'Choose a PNG, SVG, or JPG image from your computer (Max 2MB).'}
                 </p>
-                <label className="flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-50 hover:bg-rose-50 border-2 border-dashed border-slate-300 hover:border-rose-400 text-slate-700 hover:text-rose-700 rounded-xl text-xs font-bold cursor-pointer transition-colors">
-                  <Upload className="w-4 h-4 text-[#E31B23]" />
-                  <span>{language === 'bn' ? 'ফাইল বেছে নিন (Choose Image File)' : 'Select Image File'}</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-
-              {/* Option B: Direct Image URL */}
-              <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-3">
-                <div className="flex items-center gap-2 text-slate-800 font-bold text-xs">
-                  <ImageIcon className="w-4 h-4 text-blue-600" />
-                  <span>{language === 'bn' ? '২. অথবা ছবির সরাসরি ওয়েব লিংক দিন' : '2. Or Enter Direct Image URL'}</span>
+                <div className="flex flex-col sm:flex-row items-center gap-3">
+                  <label className="flex-1 w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-50 hover:bg-rose-50 border-2 border-dashed border-slate-300 hover:border-rose-400 text-slate-700 hover:text-rose-700 rounded-xl text-xs font-bold cursor-pointer transition-colors">
+                    <Upload className="w-4 h-4 text-[#E31B23]" />
+                    <span>{language === 'bn' ? 'ফাইল বেছে নিন (Choose Image File)' : 'Select Image File'}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                  </label>
+                  {previewLogo && previewLogo !== customLogoUrl && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPreviewLogo(customLogoUrl || '');
+                        setUrlInput('');
+                      }}
+                      className="text-xs text-slate-500 hover:text-rose-600 px-3 py-2 cursor-pointer"
+                    >
+                      {language === 'bn' ? 'বাতিল' : 'Cancel'}
+                    </button>
+                  )}
                 </div>
-                <p className="text-[11px] text-slate-500">
-                  {language === 'bn'
-                    ? 'ক্লাউড হোস্টেড বা ওয়েবসাইটে থাকা লোগোর সরাসরি URL পেস্ট করুন।'
-                    : 'Paste direct HTTPS URL of your organization logo.'}
-                </p>
-                <input
-                  type="url"
-                  value={urlInput}
-                  onChange={(e) => {
-                    setUrlInput(e.target.value);
-                    setPreviewLogo(e.target.value);
-                  }}
-                  placeholder="https://example.org/leedo-logo.png"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs bg-slate-50 focus:bg-white focus:ring-2 focus:ring-rose-500 font-mono"
-                />
               </div>
             </div>
 

@@ -17,7 +17,6 @@ import {
   CalendarClock, 
   AlertOctagon, 
   FileText, 
-  Image as ImageIcon, 
   History, 
   Plus, 
   CheckCircle2, 
@@ -184,13 +183,19 @@ export const ChildProfile: React.FC<ChildProfileProps> = ({ childId, onBack }) =
         )}
 
         <div className="p-4 sm:p-6 flex flex-col md:flex-row gap-5 items-start">
-          {/* Child Photo */}
+          {/* Child Photo / Avatar */}
           <div className="relative shrink-0">
-            <img
-              src={child.photoUrl}
-              alt={child.name}
-              className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover ring-2 ring-slate-100 shadow-sm"
-            />
+            {child.photoUrl ? (
+              <img
+                src={child.photoUrl}
+                alt={child.name}
+                className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover ring-2 ring-slate-100 shadow-sm"
+              />
+            ) : (
+              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-gradient-to-br from-rose-500 to-rose-700 text-white font-black text-3xl sm:text-4xl flex items-center justify-center shadow-sm">
+                {child.name.slice(0, 2).toUpperCase()}
+              </div>
+            )}
             <span className="absolute -bottom-2 -right-2 px-2 py-0.5 bg-slate-900 text-white text-[10px] font-mono font-bold rounded-md shadow-xs">
               {child.id}
             </span>
@@ -314,7 +319,7 @@ export const ChildProfile: React.FC<ChildProfileProps> = ({ childId, onBack }) =
             { id: 'referral', label: 'Govt Referral', icon: Send },
             { id: 'follow-up', label: 'Follow-up Schedule', icon: CalendarClock, count: (child.postReintegrationFollowUps?.length || 0) + (child.referralFollowUps?.length || 0) },
             { id: 'lwn', label: 'Left Without Notice', icon: AlertOctagon },
-            { id: 'documents', label: 'Documents & Photos', icon: ImageIcon, count: child.documents.length },
+            { id: 'documents', label: 'Case Documents', icon: FileText, count: child.documents.length },
             { id: 'notes', label: 'Case Notes', icon: FileText, count: child.caseNotes.length },
             { id: 'timeline', label: 'Case Journey Timeline', icon: History },
           ].map((tab) => {
@@ -1076,12 +1081,12 @@ export const ChildProfile: React.FC<ChildProfileProps> = ({ childId, onBack }) =
           </div>
         )}
 
-        {/* 13. DOCUMENTS & PHOTOS TAB */}
+        {/* 13. DOCUMENTS TAB */}
         {activeTab === 'documents' && (
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-bold text-base text-slate-900 font-display">Linked Case Documents & Rescue Photos</h3>
+                <h3 className="font-bold text-base text-slate-900 font-display">Linked Case Documents</h3>
                 <p className="text-xs text-slate-500">Directly associated with Child ID {child.id}</p>
               </div>
               <button

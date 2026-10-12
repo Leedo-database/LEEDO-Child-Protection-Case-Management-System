@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { 
   X, 
-  Camera, 
   Phone, 
   Mail, 
   Lock, 
@@ -9,7 +8,6 @@ import {
   User as UserIcon, 
   Shield, 
   Building2,
-  Upload,
   Eye,
   EyeOff
 } from 'lucide-react';
@@ -21,96 +19,20 @@ interface EditProfileModalProps {
   onClose: () => void;
 }
 
-const PRESET_AVATARS = [
-  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=256',
-  'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=256',
-  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=256',
-  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256',
-  'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=256',
-  'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=256',
-  'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=256',
-  'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=256',
-];
-
 export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose }) => {
   const { currentUser, updateUser, changeUserPassword, language } = useApp();
 
   const [name, setName] = useState(currentUser.name || '');
-  const [avatarUrl, setAvatarUrl] = useState(currentUser.avatarUrl || '');
   const [phone, setPhone] = useState(currentUser.phone || '');
   const [email, setEmail] = useState(currentUser.email || '');
   const [newPassword, setNewPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [showUrlInput, setShowUrlInput] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
   if (!isOpen) return null;
 
   const assignedAreas = getUserAssignedAreasList(currentUser);
-
-  // Handle local image file upload
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      setErrorMsg(language === 'bn' ? 'দয়া করে একটি ছবি ফাইল নির্বাচন করুন' : 'Please select an image file');
-      return;
-    }
-
-    if (file.size > 3 * 1024 * 1024) {
-      setErrorMsg(language === 'bn' ? 'ছবির সাইজ ৩ মেগাবাইটের কম হতে হবে' : 'Image size must be less than 3MB');
-      return;
-    }
-
-    setIsUploading(true);
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        const raw = reader.result;
-        const img = new Image();
-        img.onload = () => {
-          let width = img.width;
-          let height = img.height;
-          const maxDim = 256;
-          if (width > maxDim || height > maxDim) {
-            if (width > height) {
-              height = Math.round((height * maxDim) / width);
-              width = maxDim;
-            } else {
-              width = Math.round((width * maxDim) / height);
-              height = maxDim;
-            }
-          }
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(img, 0, 0, width, height);
-            setAvatarUrl(canvas.toDataURL('image/jpeg', 0.85));
-          } else {
-            setAvatarUrl(raw);
-          }
-          setIsUploading(false);
-          setErrorMsg('');
-        };
-        img.onerror = () => {
-          setAvatarUrl(raw);
-          setIsUploading(false);
-          setErrorMsg('');
-        };
-        img.src = raw;
-      }
-    };
-    reader.onerror = () => {
-      setIsUploading(false);
-      setErrorMsg(language === 'bn' ? 'ছবি আপলোড করতে ব্যর্থ হয়েছে' : 'Failed to read image');
-    };
-    reader.readAsDataURL(file);
-  };
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,7 +52,6 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
       name: name.trim(),
       phone: phone.trim(),
       email: email.trim(),
-      avatarUrl: avatarUrl.trim() || currentUser.avatarUrl,
     };
 
     if (newPassword.trim()) {
@@ -171,7 +92,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                 {language === 'bn' ? 'ব্যক্তিগত প্রোফাইল এডিট' : 'Edit Personal Profile'}
               </h3>
               <p className="text-xs text-slate-500">
-                {language === 'bn' ? 'আপনার ছবি, মোবাইল নম্বর ও পাসওয়ার্ড পরিবর্তন করুন' : 'Update your personal photo, phone, and credentials'}
+                {language === 'bn' ? 'আপনার নাম, মোবাইল নম্বর ও পাসওয়ার্ড আপডেট করুন' : 'Update your personal details, phone, and credentials'}
               </p>
             </div>
           </div>
@@ -183,9 +104,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
           </button>
         </div>
 
-        {/* Success / Error Messages */}
         {successMsg && (
-          <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-semibold flex items-center gap-2">
+          <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs flex items-center gap-2 font-semibold">
             <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
             <span>{successMsg}</span>
           </div>
@@ -198,85 +118,17 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
         )}
 
         <form onSubmit={handleSave} className="mt-4 space-y-4 text-xs">
-          {/* Avatar Preview & Upload */}
-          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-center">
-            <div className="relative inline-block mb-3">
-              <img
-                src={avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256'}
-                alt={currentUser.name}
-                className="w-20 h-20 rounded-full object-cover ring-4 ring-rose-200 mx-auto shadow-sm"
-              />
-              <label 
-                htmlFor="profile-photo-upload" 
-                className="absolute bottom-0 right-0 p-2 bg-[#E31B23] hover:bg-[#c9151d] text-white rounded-full shadow-md cursor-pointer transition-transform hover:scale-105"
-                title={language === 'bn' ? 'নতুন ছবি আপলোড করুন' : 'Upload photo'}
-              >
-                <Camera className="w-3.5 h-3.5" />
-                <input
-                  id="profile-photo-upload"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
-              </label>
+          {/* User Profile Identity Header */}
+          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center gap-3.5">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#E31B23] to-rose-700 text-white font-bold text-lg flex items-center justify-center shrink-0 shadow-sm">
+              {currentUser.name ? currentUser.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'LD'}
             </div>
-
-            <div className="text-center">
-              <label 
-                htmlFor="profile-photo-upload"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 hover:border-rose-400 text-slate-700 text-xs font-semibold rounded-xl cursor-pointer transition-colors shadow-2xs"
-              >
-                <Upload className="w-3.5 h-3.5 text-rose-600" />
-                <span>{isUploading ? (language === 'bn' ? 'আপলোড হচ্ছে...' : 'Uploading...') : (language === 'bn' ? 'ডিভাইস থেকে ছবি বেছে নিন' : 'Upload from Device')}</span>
-              </label>
-            </div>
-
-            {/* Quick preset avatars */}
-            <div className="mt-3 pt-3 border-t border-slate-200">
-              <span className="text-[11px] text-slate-500 font-medium block mb-2">
-                {language === 'bn' ? 'অথবা রেডিমেড প্রোফাইল ছবি বেছে নিন:' : 'Or pick from preset avatars:'}
-              </span>
-              <div className="flex items-center justify-center gap-2 flex-wrap">
-                {PRESET_AVATARS.map((av, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => setAvatarUrl(av)}
-                    className={`w-8 h-8 rounded-full overflow-hidden border-2 transition-transform hover:scale-110 cursor-pointer ${
-                      avatarUrl === av ? 'border-[#E31B23] ring-2 ring-rose-300 scale-105' : 'border-slate-200'
-                    }`}
-                  >
-                    <img src={av} alt="avatar option" className="w-full h-full object-cover" />
-                  </button>
-                ))}
-              </div>
+            <div className="min-w-0 flex-1">
+              <div className="font-bold text-sm text-slate-900 truncate">{currentUser.name}</div>
+              <div className="text-xs text-rose-700 font-medium truncate">{currentUser.designation || currentUser.role}</div>
+              <div className="text-[11px] font-mono text-slate-500 mt-0.5">ID: {currentUser.id} &bull; {currentUser.email}</div>
             </div>
           </div>
-
-            {/* Direct Image URL toggle */}
-            <div className="mt-2 text-center">
-              <button
-                type="button"
-                onClick={() => setShowUrlInput(!showUrlInput)}
-                className="text-[11px] text-rose-600 hover:underline cursor-pointer font-medium"
-              >
-                {showUrlInput 
-                  ? (language === 'bn' ? 'ছবির লিংক লুকান' : 'Hide Image URL')
-                  : (language === 'bn' ? 'অথবা সরাসরি ছবির লিংক দিন' : 'Or paste direct image URL')}
-              </button>
-              {showUrlInput && (
-                <div className="mt-2">
-                  <input
-                    type="url"
-                    value={avatarUrl}
-                    onChange={(e) => setAvatarUrl(e.target.value)}
-                    placeholder="https://example.com/photo.jpg"
-                    className="w-full px-3 py-1.5 border border-slate-300 rounded-xl text-xs bg-white"
-                  />
-                </div>
-              )}
-            </div>
 
           {/* Full Name (Editable) */}
           <div>
