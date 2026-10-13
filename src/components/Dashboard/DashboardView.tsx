@@ -221,11 +221,9 @@ export const DashboardView: React.FC = () => {
                       className="bg-white p-3.5 rounded-xl border border-rose-200 shadow-2xs hover:shadow-md cursor-pointer transition-all flex items-center justify-between group"
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <img
-                          src={c.photoUrl}
-                          alt={c.name}
-                          className="w-12 h-12 rounded-lg object-cover ring-2 ring-rose-400"
-                        />
+                        <div className="w-12 h-12 rounded-lg bg-slate-900 text-white font-bold text-sm flex items-center justify-center shrink-0 font-mono shadow-2xs">
+                          {c.name.slice(0, 2).toUpperCase()}
+                        </div>
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="text-xs font-mono font-bold text-slate-900">{c.id}</span>
@@ -514,11 +512,9 @@ export const DashboardView: React.FC = () => {
                     <tr key={child.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-3">
-                          <img
-                            src={child.photoUrl}
-                            alt={child.name}
-                            className="w-9 h-9 rounded-lg object-cover ring-1 ring-slate-200"
-                          />
+                          <div className="w-9 h-9 rounded-lg bg-slate-900 text-white font-bold text-xs flex items-center justify-center shrink-0 font-mono shadow-2xs">
+                            {child.name.slice(0, 2).toUpperCase()}
+                          </div>
                           <div>
                             <div className="font-bold text-slate-900 hover:text-rose-600 cursor-pointer" onClick={() => handleOpenChild(child.id)}>
                               {child.name} {child.nickname ? `("${child.nickname}")` : ''}

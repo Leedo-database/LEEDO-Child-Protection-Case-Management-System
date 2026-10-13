@@ -627,11 +627,9 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
 
             {/* User Profile Mini Badge */}
             <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex items-center gap-3">
-              <img
-                src={pendingFirstLoginUser.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256'}
-                alt={pendingFirstLoginUser.name}
-                className="w-10 h-10 rounded-xl object-cover ring-2 ring-rose-300"
-              />
+              <div className="w-10 h-10 rounded-xl bg-slate-900 text-white font-bold text-xs flex items-center justify-center ring-2 ring-rose-300 font-mono shrink-0">
+                {pendingFirstLoginUser.name ? pendingFirstLoginUser.name.slice(0, 2).toUpperCase() : 'ST'}
+              </div>
               <div className="min-w-0 flex-1 text-xs">
                 <div className="font-bold text-slate-900 flex items-center gap-1.5">
                   <span>{pendingFirstLoginUser.name}</span>

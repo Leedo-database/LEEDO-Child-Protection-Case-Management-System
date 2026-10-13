@@ -14,7 +14,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01819-291567',
     status: 'Active',
     joinedDate: '2000-01-01',
-    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1002',
@@ -29,7 +28,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01861-676979',
     status: 'Active',
     joinedDate: '2010-03-01',
-    avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1004',
@@ -44,7 +42,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01733-336365',
     status: 'Active',
     joinedDate: '2014-06-15',
-    avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1007',
@@ -59,7 +56,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01533-650126',
     status: 'Active',
     joinedDate: '2018-02-10',
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1008',
@@ -74,7 +70,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01893-636383',
     status: 'Active',
     joinedDate: '2023-01-01',
-    avatarUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1009',
@@ -89,7 +84,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01818-202173',
     status: 'Active',
     joinedDate: '2019-05-12',
-    avatarUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1013',
@@ -104,7 +98,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01728-790037',
     status: 'Active',
     joinedDate: '2016-08-01',
-    avatarUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1014',
@@ -119,7 +112,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01952-509518',
     status: 'Active',
     joinedDate: '2018-09-01',
-    avatarUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1015',
@@ -134,7 +126,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01919-490307',
     status: 'Active',
     joinedDate: '2017-02-15',
-    avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1016',
@@ -149,7 +140,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01752-841427',
     status: 'Active',
     joinedDate: '2019-01-10',
-    avatarUrl: 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1017',
@@ -164,7 +154,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01712-884445',
     status: 'Active',
     joinedDate: '2020-04-01',
-    avatarUrl: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1018',
@@ -179,7 +168,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '019157-11125',
     status: 'Active',
     joinedDate: '2021-03-15',
-    avatarUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1019',
@@ -194,7 +182,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '013122-45976',
     status: 'Active',
     joinedDate: '2021-05-20',
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1022',
@@ -209,7 +196,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01813-253769',
     status: 'Active',
     joinedDate: '2016-11-01',
-    avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1023',
@@ -224,7 +210,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01304-035081',
     status: 'Active',
     joinedDate: '2017-06-01',
-    avatarUrl: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1028',
@@ -239,7 +224,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01632-147709',
     status: 'Active',
     joinedDate: '2019-02-15',
-    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1030',
@@ -254,7 +238,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01934-229459',
     status: 'Active',
     joinedDate: '2019-08-01',
-    avatarUrl: 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1032',
@@ -269,7 +252,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01615-190173',
     status: 'Active',
     joinedDate: '2019-03-01',
-    avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1034',
@@ -284,7 +266,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01618-235848',
     status: 'Active',
     joinedDate: '2020-01-10',
-    avatarUrl: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1035',
@@ -299,7 +280,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01939-849787',
     status: 'Active',
     joinedDate: '2020-07-01',
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1036',
@@ -314,7 +294,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01782-327102',
     status: 'Active',
     joinedDate: '2020-09-15',
-    avatarUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1037',
@@ -329,7 +308,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01950-880717',
     status: 'Active',
     joinedDate: '2021-02-01',
-    avatarUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1038',
@@ -344,7 +322,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01619-845002',
     status: 'Active',
     joinedDate: '2021-06-01',
-    avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1039',
@@ -359,7 +336,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01962-678701',
     status: 'Active',
     joinedDate: '2021-08-15',
-    avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1040',
@@ -374,7 +350,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '0189-3468570',
     status: 'Active',
     joinedDate: '2021-10-01',
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1044',
@@ -389,7 +364,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01710-494058',
     status: 'Active',
     joinedDate: '2022-01-15',
-    avatarUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1052',
@@ -404,7 +378,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01533-618176 / 01675-633010',
     status: 'Active',
     joinedDate: '2015-05-01',
-    avatarUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1057',
@@ -419,7 +392,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '016714-32484',
     status: 'Active',
     joinedDate: '2016-01-10',
-    avatarUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1061',
@@ -434,7 +406,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01623-841818',
     status: 'Active',
     joinedDate: '2022-04-01',
-    avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1062',
@@ -449,7 +420,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01798-852216',
     status: 'Active',
     joinedDate: '2022-05-15',
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1063',
@@ -464,7 +434,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01830-381677',
     status: 'Active',
     joinedDate: '2022-08-01',
-    avatarUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1064',
@@ -479,7 +448,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '0133-9257825',
     status: 'Active',
     joinedDate: '2022-09-10',
-    avatarUrl: 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1067',
@@ -494,7 +462,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '0133-4112941',
     status: 'Active',
     joinedDate: '2022-11-01',
-    avatarUrl: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1068',
@@ -509,7 +476,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '0179-7654700',
     status: 'Active',
     joinedDate: '2022-12-01',
-    avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1069',
@@ -524,7 +490,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '0172-2271624',
     status: 'Active',
     joinedDate: '2023-01-05',
-    avatarUrl: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1070',
@@ -539,7 +504,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01516-097997',
     status: 'Active',
     joinedDate: '2023-02-01',
-    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1071',
@@ -554,7 +518,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01797-038112',
     status: 'Active',
     joinedDate: '2023-03-01',
-    avatarUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1075',
@@ -569,7 +532,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01617-155535',
     status: 'Active',
     joinedDate: '2023-05-15',
-    avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1079',
@@ -584,7 +546,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01680-882718',
     status: 'Active',
     joinedDate: '2023-07-01',
-    avatarUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1080',
@@ -599,7 +560,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01749-692780',
     status: 'Active',
     joinedDate: '2023-08-01',
-    avatarUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1081',
@@ -614,7 +574,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01623-868173',
     status: 'Active',
     joinedDate: '2023-09-01',
-    avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1084',
@@ -629,7 +588,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01580-935537',
     status: 'Active',
     joinedDate: '2023-10-15',
-    avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1088',
@@ -644,7 +602,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01595-047832',
     status: 'Active',
     joinedDate: '2023-12-01',
-    avatarUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1089',
@@ -659,7 +616,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '0197-9805641',
     status: 'Active',
     joinedDate: '2024-01-10',
-    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1090',
@@ -674,7 +630,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01763-433819',
     status: 'Active',
     joinedDate: '2024-02-01',
-    avatarUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1091',
@@ -689,7 +644,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01913-550484',
     status: 'Active',
     joinedDate: '2024-03-01',
-    avatarUrl: 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1092',
@@ -704,7 +658,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01711-889900',
     status: 'Active',
     joinedDate: '2024-04-01',
-    avatarUrl: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1093',
@@ -719,7 +672,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01317-192291',
     status: 'Active',
     joinedDate: '2024-05-15',
-    avatarUrl: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1094',
@@ -734,7 +686,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01937-084424',
     status: 'Active',
     joinedDate: '2024-06-01',
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1095',
@@ -749,7 +700,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01577-528412',
     status: 'Active',
     joinedDate: '2024-07-01',
-    avatarUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1096',
@@ -764,7 +714,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01815-452923',
     status: 'Active',
     joinedDate: '2024-08-01',
-    avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=256',
   },
   {
     id: 'emp-1097',
@@ -779,7 +728,6 @@ export const OFFICIAL_LEEDO_USERS: User[] = [
     phone: '01999-690906',
     status: 'Active',
     joinedDate: '2024-09-01',
-    avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=256',
   }
 ];
 
@@ -817,9 +765,8 @@ export const OFFICIAL_LEEDO_SHELTERS: ShelterInfo[] = [
     phone: '+880 1728-790037 / +880 1952-509518',
     establishedDate: '2021-01-10',
     isLongTerm: true,
-    shelterType: 'LEEDO Permanent Sanctuary',
-    maxAge: 17,
-    description: 'Permanent residential sanctuary up to 17 years old. Maximum Capacity: 100 beds. Provides formal education, sports, music, and adolescent life development for children without traceable families.'
+    maxAge: 18,
+    description: 'Permanent residential sanctuary and development home up to 18 years old. Maximum Capacity: 100 beds. Provides formal education, psychosocial development, vocational skills, and comprehensive preparation for self-reliant general life upon turning 18.'
   }
 ];
 

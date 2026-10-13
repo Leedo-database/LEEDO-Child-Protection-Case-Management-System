@@ -205,11 +205,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Staff Role Profile & System Status */}
         <div className="p-3 border-t border-slate-200 bg-slate-50/80">
           <div className="flex items-center gap-2.5">
-            <img
-              src={currentUser.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256'}
-              alt={currentUser.name}
-              className="w-8 h-8 rounded-full object-cover ring-1 ring-slate-300 shrink-0"
-            />
+            <div className="w-8 h-8 rounded-xl bg-slate-900 text-white font-bold text-xs flex items-center justify-center ring-1 ring-slate-300 shrink-0 font-mono">
+              {currentUser.name ? currentUser.name.slice(0, 2).toUpperCase() : 'ST'}
+            </div>
             <div className="flex-1 min-w-0">
               <div className="text-xs font-bold text-slate-900 truncate">{currentUser.name}</div>
               <div className="text-[11px] text-rose-600 font-medium truncate">{currentUser.designation || currentUser.role}</div>

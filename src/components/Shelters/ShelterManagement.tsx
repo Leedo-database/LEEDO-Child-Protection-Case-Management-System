@@ -100,15 +100,39 @@ export const ShelterManagement: React.FC = () => {
     );
   }
 
+  const [peaceHomeFilter, setPeaceHomeFilter] = useState<'active' | 'departed' | 'all'>('active');
+
   const currentShelter = shelters.find((s) => s.name === selectedShelterName) || accessibleShelters[0];
+  const isPeaceHome = selectedShelterName === 'LEEDO Peace Home';
+
   const shelterChildren = children.filter((c) => !c.isArchived && c.shelterName === selectedShelterName && c.currentShelterStatus === 'Active Resident');
+
+  const peaceHomeActiveChildren = children.filter(
+    (c) => !c.isArchived && c.shelterName === 'LEEDO Peace Home' && c.currentShelterStatus === 'Active Resident'
+  );
+
+  const peaceHomeDepartedChildren = children.filter(
+    (c) =>
+      !c.isArchived &&
+      (c.shelterName === 'LEEDO Peace Home' ||
+        c.caseStatus === 'Transitioned to General Life (Age 18+)' ||
+        c.caseStatus === 'Peace Home Departed' ||
+        Boolean(c.peaceHomeDeparture)) &&
+      c.currentShelterStatus !== 'Active Resident'
+  );
+
+  const displayedChildren = isPeaceHome
+    ? (peaceHomeFilter === 'active'
+        ? peaceHomeActiveChildren
+        : peaceHomeFilter === 'departed'
+        ? peaceHomeDepartedChildren
+        : [...peaceHomeActiveChildren, ...peaceHomeDepartedChildren])
+    : shelterChildren;
 
   const over6Weeks = shelterChildren.filter((c) => getSixWeekAlertStatus(c).status === 'exceeded');
   const approaching6Weeks = shelterChildren.filter((c) => getSixWeekAlertStatus(c).status === 'approaching');
   const capacity = currentShelter?.capacity || 40;
   const occupancyPercentage = Math.round((shelterChildren.length / capacity) * 100);
-
-  const isPeaceHome = selectedShelterName === 'LEEDO Peace Home';
 
   const handleOpenChild = (childId: string) => {
     setSelectedChildId(childId);
@@ -224,13 +248,15 @@ export const ShelterManagement: React.FC = () => {
           <div className="relative z-10 max-w-3xl">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/20 border border-emerald-400/30 rounded-full text-[11px] font-bold uppercase tracking-wider text-emerald-300 mb-2">
               <Sparkles className="w-3.5 h-3.5" />
-              Long-term Sanctuary Protocol (Up to 17 Years Old)
+              {language === 'bn' ? 'স্থায়ী আশ্রয় ও বিকাশ প্রোটোকল (১৮ বছর বয়স পর্যন্ত)' : 'Long-term Sanctuary Protocol (Up to 18 Years Old)'}
             </div>
             <h2 className="text-xl sm:text-2xl font-black font-display text-white">
               LEEDO Peace Home (শান্তিনীড়)
             </h2>
             <p className="text-xs sm:text-sm text-slate-300 mt-1.5 leading-relaxed">
-              When children in Kamalapur and Kadamtali transitional safe homes reach the 6-week limit and family tracing is unsuccessful or unsafe, and no government shelter referral is viable, they are formally admitted here. At LEEDO Peace Home, children reside under organizational guardianship until age 17, receiving formal schooling, vocational trades apprenticeship, psychological counseling, and family bonding.
+              {language === 'bn'
+                ? 'কমলাপুর ও কদমতলী ট্রানজিশনাল শেল্টারে ৬ সপ্তাহ অতিক্রান্ত হওয়ার পর যদি কোনো শিশুর পরিবার খুঁজে না পাওয়া যায় এবং সরকারি সেন্টারে স্থানান্তর সম্ভব না হয়, তবে তাদের স্থায়ীভাবে লিডো পিস হোমে ভর্তি করা হয়। এখানে শিশুরা ১৮ বছর বয়স পর্যন্ত প্রাতিষ্ঠানিক অভিভাবকত্বে শিক্ষা, চিকিৎসা, নিয়মিত কাউন্সেলিং ও জীবন দক্ষতা অর্জন করে। ১৮ বছর পূর্ণ হলে প্রতিটি শিশুকে স্বাবলম্বী সাধারণ জীবনে রূপান্তর করানো হয়।'
+                : 'When children in transitional shelters reach the 6-week limit without safe family tracing or govt options, they enter LEEDO Peace Home. Children reside safely until age 18, receiving holistic schooling, vocational training, counseling, and daily life skills. Upon turning 18, they transition into dignified, self-reliant general life.'}
             </p>
           </div>
         </div>
@@ -240,7 +266,7 @@ export const ShelterManagement: React.FC = () => {
           <div>
             <strong className="text-blue-950">Transitional Safe Home Mandate (Max 6 Weeks Stay):</strong>
             <p className="text-blue-800 mt-0.5 leading-relaxed">
-              {currentShelter.name} is dedicated to rapid rescue reception, medical triage, trauma therapy, and intensive family tracing. If a child stays over 6 weeks and cannot be safely reunited or placed in a govt facility, staff can initiate transfer to <strong>LEEDO Peace Home</strong> for permanent upbringing until age 17.
+              {currentShelter.name} is dedicated to rapid rescue reception, medical triage, trauma therapy, and intensive family tracing. If a child stays over 6 weeks and cannot be safely reunited or placed in a govt facility, staff can initiate transfer to <strong>LEEDO Peace Home</strong> for permanent upbringing until age 18.
             </p>
           </div>
         </div>
@@ -297,12 +323,16 @@ export const ShelterManagement: React.FC = () => {
           ) : (
             <>
               <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-900">
-                <span className="text-emerald-700 block text-[10px] uppercase font-semibold">Under 17y Guardianship</span>
-                <span className="text-xl font-bold">{shelterChildren.length}</span>
+                <span className="text-emerald-700 block text-[10px] uppercase font-semibold">
+                  {language === 'bn' ? '১৮ বছর পর্যন্ত স্থায়ী যত্ন' : 'Under 18y Sanctuary'}
+                </span>
+                <span className="text-xl font-bold">{peaceHomeActiveChildren.length}</span>
               </div>
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-blue-900">
-                <span className="text-blue-700 block text-[10px] uppercase font-semibold">Vocational Training</span>
-                <span className="text-xl font-bold">{shelterChildren.filter(c => c.estimatedAge >= 13).length} Enrolled</span>
+              <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl text-purple-900">
+                <span className="text-purple-700 block text-[10px] uppercase font-semibold">
+                  {language === 'bn' ? '১৮+ সাধারণ জীবনে / প্রস্থান' : '18+ General Life / Departed'}
+                </span>
+                <span className="text-xl font-bold">{peaceHomeDepartedChildren.length}</span>
               </div>
             </>
           )}
@@ -327,7 +357,7 @@ export const ShelterManagement: React.FC = () => {
             </span>
           </div>
           <div className="text-xs text-rose-800 mb-3 leading-relaxed">
-            Transitional shelter stays are capped at 6 weeks. If family tracing has proven negative and no government shelter is accessible, transfer the child to <strong>LEEDO Peace Home</strong> for long-term protection up to age 17.
+            Transitional shelter stays are capped at 6 weeks. If family tracing has proven negative and no government shelter is accessible, transfer the child to <strong>LEEDO Peace Home</strong> for long-term protection and holistic development up to age 18.
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -340,7 +370,9 @@ export const ShelterManagement: React.FC = () => {
                   onClick={() => handleOpenChild(c.id)}
                   className="flex items-center gap-2.5 cursor-pointer flex-1 min-w-0"
                 >
-                  <img src={c.photoUrl} alt={c.name} className="w-10 h-10 rounded-lg object-cover shrink-0" />
+                  <div className="w-10 h-10 rounded-lg bg-slate-900 text-white font-bold text-xs flex items-center justify-center shrink-0 font-mono">
+                    {c.name.slice(0, 2).toUpperCase()}
+                  </div>
                   <div className="min-w-0">
                     <div className="font-bold text-xs text-slate-900 truncate hover:text-rose-600">{c.name}</div>
                     <div className="text-[11px] text-slate-500 font-mono">{c.id} &bull; {c.estimatedAge}y</div>
@@ -371,13 +403,69 @@ export const ShelterManagement: React.FC = () => {
 
       {/* Resident Children Roster */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
-        <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-          <h3 className="font-bold text-sm text-slate-900 font-display">
-            Current Resident Children at {currentShelter.name} ({shelterChildren.length})
-          </h3>
-          <span className="text-xs text-slate-500">
-            {isPeaceHome ? 'Enrolled up to 17y' : 'Transitional 6-wk Care'}
-          </span>
+        <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 className="font-bold text-sm text-slate-900 font-display">
+              {isPeaceHome 
+                ? (language === 'bn' ? 'লিডো পিস হোম শিশু রেজিস্ট্রি' : 'LEEDO Peace Home Children Registry')
+                : `Current Resident Children at ${currentShelter.name} (${shelterChildren.length})`}
+            </h3>
+            <span className="text-xs text-slate-500">
+              {isPeaceHome 
+                ? (language === 'bn' ? '১৮ বছর বয়স পর্যন্ত স্থায়ী আশ্রয়, এরপর সাধারণ জীবনে রূপান্তর' : 'Care up to 18y, then General Independent Life')
+                : 'Transitional 6-wk Care'}
+            </span>
+          </div>
+
+          {/* Peace Home Sub-Filter Pills */}
+          {isPeaceHome && (
+            <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 self-start sm:self-auto text-xs">
+              <button
+                type="button"
+                onClick={() => setPeaceHomeFilter('active')}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  peaceHomeFilter === 'active'
+                    ? 'bg-white text-emerald-800 shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <span>{language === 'bn' ? 'বর্তমান আবাসিক (<১৮)' : 'Active (<18y)'}</span>
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 font-bold">
+                  {peaceHomeActiveChildren.length}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPeaceHomeFilter('departed')}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  peaceHomeFilter === 'departed'
+                    ? 'bg-white text-purple-800 shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <span>{language === 'bn' ? 'প্রস্থানকারী ও ১৮+' : 'Departed & 18+'}</span>
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-purple-100 text-purple-800 font-bold">
+                  {peaceHomeDepartedChildren.length}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPeaceHomeFilter('all')}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  peaceHomeFilter === 'all'
+                    ? 'bg-white text-slate-900 shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <span>{language === 'bn' ? 'সকল' : 'All'}</span>
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 text-slate-700 font-bold">
+                  {peaceHomeActiveChildren.length + peaceHomeDepartedChildren.length}
+                </span>
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="overflow-x-auto">
@@ -386,62 +474,120 @@ export const ShelterManagement: React.FC = () => {
               <tr>
                 <th className="py-3 px-4">Child ID & Name</th>
                 <th className="py-3 px-4">Age / Gender</th>
-                <th className="py-3 px-4">Room / Bed</th>
-                <th className="py-3 px-4">Admission Date</th>
-                <th className="py-3 px-4">Days in Facility</th>
-                <th className="py-3 px-4">{isPeaceHome ? 'Care Type' : '6-Wk Status'}</th>
-                <th className="py-3 px-4">Case Worker</th>
+                <th className="py-3 px-4">{isPeaceHome ? 'Room / Exit Info' : 'Room / Bed'}</th>
+                <th className="py-3 px-4">{isPeaceHome ? 'Admission / Exit Date' : 'Admission Date'}</th>
+                <th className="py-3 px-4">{isPeaceHome ? '18y Readiness / Status' : 'Days in Facility'}</th>
+                <th className="py-3 px-4">{isPeaceHome ? 'Progress Logs' : '6-Wk Status'}</th>
+                <th className="py-3 px-4">Case Worker / Author</th>
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-normal">
-              {shelterChildren.length === 0 ? (
+              {displayedChildren.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-10 text-center text-slate-400">
-                    No active residents currently assigned to {currentShelter.name}.
+                    {isPeaceHome 
+                      ? (peaceHomeFilter === 'departed' ? 'এখনো কোনো প্রস্থানকারী বা ১৮+ রূপান্তর রেকর্ড পাওয়া যায়নি।' : 'No records found under this filter.')
+                      : `No active residents currently assigned to ${currentShelter.name}.`}
                   </td>
                 </tr>
               ) : (
-                shelterChildren.map((child) => {
+                displayedChildren.map((child) => {
                   const days = getDaysInShelter(child);
                   const sixWeek = getSixWeekAlertStatus(child);
+                  const isDepartedChild = Boolean(
+                    child.peaceHomeDeparture || 
+                    child.caseStatus === 'Transitioned to General Life (Age 18+)' || 
+                    child.caseStatus === 'Peace Home Departed' ||
+                    child.currentShelterStatus !== 'Active Resident'
+                  );
+                  const yearsTo18 = Math.max(0, 18 - (child.estimatedAge || 10));
 
                   return (
                     <tr key={child.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2.5">
-                          <img src={child.photoUrl} alt={child.name} className="w-9 h-9 rounded-lg object-cover" />
+                          <div className="w-9 h-9 rounded-lg bg-slate-900 text-white font-bold text-xs flex items-center justify-center shrink-0 font-mono">
+                            {child.name.slice(0, 2).toUpperCase()}
+                          </div>
                           <div>
                             <div 
-                              className="font-bold text-slate-900 cursor-pointer hover:text-rose-600" 
+                              className="font-bold text-slate-900 cursor-pointer hover:text-rose-600 flex items-center gap-1.5" 
                               onClick={() => handleOpenChild(child.id)}
                             >
-                              {child.name}
+                              <span>{child.name}</span>
+                              {isDepartedChild && (
+                                <span className="px-1.5 py-0.2 bg-purple-100 text-purple-800 text-[9px] font-bold rounded">
+                                  প্রস্থানকারী
+                                </span>
+                              )}
                             </div>
                             <div className="font-mono text-[11px] text-slate-500">{child.id}</div>
                           </div>
                         </div>
                       </td>
-                      <td className="py-3 px-4">{child.estimatedAge}y &bull; {child.gender}</td>
                       <td className="py-3 px-4">
-                        <span className="font-medium text-slate-700">
-                          {child.roomOrBed || child.bedNumber || 'Assigned Dorm'}
-                        </span>
+                        <span className="font-bold text-slate-800">{child.estimatedAge}y</span> &bull; {child.gender}
+                        {isPeaceHome && !isDepartedChild && (
+                          <div className="text-[10px] text-emerald-700 font-semibold">
+                            {yearsTo18 === 0 ? '১৮ পূর্ণ' : `${yearsTo18} বছর বাকি`}
+                          </div>
+                        )}
                       </td>
-                      <td className="py-3 px-4">{child.admissionDate}</td>
-                      <td className="py-3 px-4 font-bold text-slate-900">{days} Days</td>
+                      <td className="py-3 px-4">
+                        {isDepartedChild ? (
+                          <div className="text-xs">
+                            <span className="font-bold text-purple-900 block truncate max-w-[150px]">
+                              {child.peaceHomeDeparture?.occupationOrJobTitle || child.peaceHomeDeparture?.exitType || 'সাধারণ জীবন'}
+                            </span>
+                            <span className="text-[10px] text-slate-500 truncate block max-w-[150px]">
+                              {child.peaceHomeDeparture?.newAddressOrLocation || 'নতুন অবস্থান'}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="font-medium text-slate-700">
+                            {child.roomOrBed || child.bedNumber || 'Assigned Dorm'}
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 font-mono text-[11px]">
+                        {isDepartedChild && child.peaceHomeDeparture?.departureDate
+                          ? child.peaceHomeDeparture.departureDate
+                          : child.admissionDate}
+                      </td>
                       <td className="py-3 px-4">
                         {isPeaceHome ? (
-                          <span className="px-2 py-0.5 rounded text-[11px] bg-emerald-100 text-emerald-800 font-bold border border-emerald-200">
-                            Peace Home (Up to 17y)
-                          </span>
+                          isDepartedChild ? (
+                            <span className="px-2 py-0.5 rounded text-[11px] bg-purple-100 text-purple-800 font-bold border border-purple-200">
+                              {child.peaceHomeDeparture?.exitType?.split(' ')[0] || 'প্রস্থান সম্পন্ন'}
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded text-[11px] bg-emerald-100 text-emerald-800 font-bold border border-emerald-200">
+                              ১৮ বছর পর্যন্ত আশ্রয় ({yearsTo18}y বাকি)
+                            </span>
+                          )
+                        ) : (
+                          <span className="font-bold text-slate-900">{days} Days</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
+                        {isPeaceHome ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                              {child.peaceHomeProgressRecords?.length || 0} টি মূল্যায়ন
+                            </span>
+                          </div>
                         ) : (
                           <span className={`px-2 py-0.5 rounded text-[11px] border ${sixWeek.badgeClass}`}>
                             {sixWeek.label}
                           </span>
                         )}
                       </td>
-                      <td className="py-3 px-4">{child.assignedCaseWorker}</td>
+                      <td className="py-3 px-4 text-slate-600 truncate max-w-[120px]">
+                        {isDepartedChild && child.peaceHomeDeparture?.authorizedBy 
+                          ? child.peaceHomeDeparture.authorizedBy 
+                          : child.assignedCaseWorker}
+                      </td>
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           {!isPeaceHome && days >= 30 && (
@@ -478,7 +624,7 @@ export const ShelterManagement: React.FC = () => {
               <div>
                 <span className="text-xs font-bold uppercase text-emerald-600">Long-term Sanctuary Referral</span>
                 <h3 className="font-bold text-base text-slate-900">
-                  Transfer to LEEDO Peace Home (Up to 17 Years)
+                  Transfer to LEEDO Peace Home (Up to 18 Years Sanctuary)
                 </h3>
               </div>
               <button
@@ -490,11 +636,9 @@ export const ShelterManagement: React.FC = () => {
             </div>
 
             <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3 mb-4">
-              <img
-                src={childToTransfer.photoUrl}
-                alt={childToTransfer.name}
-                className="w-12 h-12 rounded-xl object-cover"
-              />
+              <div className="w-12 h-12 rounded-xl bg-slate-900 text-white font-bold text-sm flex items-center justify-center shrink-0 font-mono shadow-2xs">
+                {childToTransfer.name.slice(0, 2).toUpperCase()}
+              </div>
               <div className="text-xs">
                 <div className="font-bold text-slate-900">{childToTransfer.name}</div>
                 <div className="font-mono text-slate-500">{childToTransfer.id} &bull; {childToTransfer.estimatedAge} years old</div>
@@ -528,7 +672,7 @@ export const ShelterManagement: React.FC = () => {
                   required
                   value={transferNotes}
                   onChange={(e) => setTransferNotes(e.target.value)}
-                  placeholder="Child exceeded 6 weeks transitional care; intensive tracing yielded no traceable family; govt shelter unavailable. Transferred under LEEDO Peace Home guardianship up to age 17..."
+                  placeholder="Child exceeded 6 weeks transitional care; intensive tracing yielded no traceable family; govt shelter unavailable. Transferred under LEEDO Peace Home guardianship up to age 18..."
                   className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500"
                 />
               </div>

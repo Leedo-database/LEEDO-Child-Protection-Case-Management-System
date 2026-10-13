@@ -202,6 +202,8 @@ export type CaseStatus =
   | 'Referral Follow-up'
   | 'Transferred to Peace Home'
   | 'Peace Home Resident'
+  | 'Transitioned to General Life (Age 18+)'
+  | 'Peace Home Departed'
   | 'Left Without Notice'
   | 'Case Closed'
   | 'Transferred';
@@ -219,9 +221,62 @@ export interface ShelterInfo {
   isLongTerm?: boolean;
   isGovtShelter?: boolean;
   shelterType?: 'LEEDO Transitional Shelter' | 'LEEDO Permanent Sanctuary' | 'Government Shelter' | 'Other Facility';
-  maxAge?: number; // e.g. 17 years for Peace Home
+  maxAge?: number; // 18 years for Peace Home sanctuary, after which youth transition to independent general life
   description?: string;
   email?: string;
+}
+
+export type PeaceHomeDevelopmentCategory =
+  | 'Psychosocial & Emotional Wellbeing'
+  | 'Daily Life & Mother Care'
+  | 'Education & Academic Progress'
+  | 'Life Skills & Age 18 Independence'
+  | 'Vocational & Technical Training'
+  | 'Health & Physical Nutrition';
+
+export type PeaceHomeProgressScore =
+  | 'Excellent'
+  | 'Steady Progress'
+  | 'Moderate'
+  | 'Needs Guidance';
+
+export interface PeaceHomeProgressRecord {
+  id: string;
+  date: string;
+  category: PeaceHomeDevelopmentCategory;
+  score: PeaceHomeProgressScore;
+  authorName: string;
+  authorRole: 'Manager Peace Home' | 'Peace Home Mother' | 'Psychosocial Counselor' | 'Super Admin' | string;
+  title: string;
+  observations: string;
+  milestonesAchieved?: string;
+  age18PreparationNotes?: string;
+  nextSteps?: string;
+  createdAt: string;
+}
+
+export type PeaceHomeExitType =
+  | 'Transitioned to General Life (Age 18+ Graduated)'
+  | 'Family Reintegration'
+  | 'Transferred to Higher Academy / Specialized Facility'
+  | 'Voluntary Departure'
+  | 'Other Discharge';
+
+export interface PeaceHomeDepartureRecord {
+  departureDate: string;
+  exitType: PeaceHomeExitType;
+  ageAtDeparture: number;
+  newAddressOrLocation: string;
+  contactNumber?: string;
+  occupationOrJobTitle?: string;
+  employerOrOrganization?: string;
+  monthlyIncomeBdt?: number;
+  livingArrangement?: 'Independent Rented Room' | 'Shared Hostel/Mess' | 'Family Accommodation' | 'Workplace Dormitory' | string;
+  starterSupportProvided?: string;
+  followUpPlan?: string;
+  authorizedBy: string;
+  finalRemarks: string;
+  recordedAt: string;
 }
 
 export type SUSArea = 
@@ -570,6 +625,11 @@ export interface Child {
   referralFollowUps: ReferralFollowUp[];
   thirdPartyReferral?: ThirdPartyReferralInfo;
   leftWithoutNotice?: LeftWithoutNoticeRecord;
+
+  // Peace Home (Up to 18 Years Care & General Life Transition)
+  peaceHomeProgressRecords?: PeaceHomeProgressRecord[];
+  peaceHomeDeparture?: PeaceHomeDepartureRecord;
+  isTransitionedToGeneralLife?: boolean;
 
   // Case notes, documents, timeline
   caseNotes: CaseNote[];

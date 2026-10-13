@@ -30,6 +30,7 @@ import { useApp, MASTER_HR_EMAIL } from '../../context/AppContext';
 import { User, UserRole, StaffStatus, ShelterName, RescueArea, StaffPermissions } from '../../types';
 import { STANDARD_LEEDO_DESIGNATIONS, getRoleAndPermissionsByDesignation } from '../../utils/staffRoleMapping';
 import { LEEDO_OPERATIONAL_AREAS, getUserAssignedAreasList } from '../../utils/areaPermissions';
+import { ChangeLogoModal } from './ChangeLogoModal';
 
 export const UsersView: React.FC = () => {
   const { 
@@ -51,9 +52,20 @@ export const UsersView: React.FC = () => {
     setActiveView
   } = useApp();
 
+  const isHrAdmin = 
+    Boolean(isHrOrKantaUser) ||
+    currentUser.email?.toLowerCase().trim() === 'hr.leedo2000@gmail.com' ||
+    currentUser.email?.toLowerCase().trim() === 'kanta.leedo@gmail.com' ||
+    currentUser.employeeId === '1001' ||
+    currentUser.employeeId === '1002' ||
+    currentUser.role === 'Super Admin' ||
+    Boolean(currentUser.permissions?.canManageHR) ||
+    currentUser.department === 'Admin & Finance';
+
   const [filterRole, setFilterRole] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showLogoModal, setShowLogoModal] = useState(false);
   
   // Password Reset Confirmation Modal
   const [resettingUser, setResettingUser] = useState<User | null>(null);
@@ -148,7 +160,6 @@ export const UsersView: React.FC = () => {
       phone: newPhone.trim(),
       status: 'Active',
       joinedDate: new Date().toISOString().split('T')[0],
-      avatarUrl: `https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256`,
       permissions: {
         ...roleMapping.permissions,
         canDelete: isHeadOfficeOrAdmin,
@@ -302,14 +313,16 @@ export const UsersView: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 shrink-0">
-            <button
-              onClick={() => setActiveView('settings')}
-              className="flex items-center gap-2 px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl transition-colors cursor-pointer border border-slate-200"
-              title={language === 'bn' ? 'সিস্টেম সেটিংস থেকে প্রতিষ্ঠানের অফিশিয়াল ব্র্যান্ড লোগো পরিবর্তন করুন' : 'Change official brand logo in settings'}
-            >
-              <ImageIcon className="w-4 h-4 text-[#E31B23]" />
-              <span>{language === 'bn' ? 'প্রতিষ্ঠানের লোগো পরিবর্তন' : 'Change Organization Logo'}</span>
-            </button>
+            {isHrAdmin && (
+              <button
+                onClick={() => setShowLogoModal(true)}
+                className="flex items-center gap-2 px-3.5 py-2.5 bg-rose-50 hover:bg-rose-100 text-[#E31B23] text-xs font-bold rounded-xl transition-colors cursor-pointer border border-rose-200 shadow-2xs"
+                title={language === 'bn' ? 'সংস্থার অফিশিয়াল ব্র্যান্ড লোগো পরিবর্তন করুন (এইচআর সুবিধা)' : 'Change organization official brand logo (HR Exclusive)'}
+              >
+                <ImageIcon className="w-4 h-4 text-[#E31B23]" />
+                <span>{language === 'bn' ? 'লোগো পরিবর্তন (এইচআর)' : 'Change Logo (HR)'}</span>
+              </button>
+            )}
 
             <button
               onClick={() => setShowAddModal(true)}
@@ -389,13 +402,15 @@ export const UsersView: React.FC = () => {
                 {/* Top Info */}
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-3">
-                    <img
-                      src={user.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256'}
-                      alt={user.name}
-                      className={`w-12 h-12 rounded-full object-cover ring-2 ${
-                        isResigned ? 'ring-rose-300 grayscale' : 'ring-slate-100'
+                    <div
+                      className={`w-12 h-12 rounded-2xl flex items-center justify-center font-mono font-bold text-sm ring-2 ${
+                        isResigned
+                          ? 'bg-slate-200 text-slate-500 ring-slate-300'
+                          : 'bg-slate-900 text-white ring-rose-200'
                       }`}
-                    />
+                    >
+                      {user.name ? user.name.slice(0, 2).toUpperCase() : 'ST'}
+                    </div>
                     <div>
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <h3 className="font-bold text-sm text-slate-900">{user.name}</h3>
@@ -1152,6 +1167,12 @@ export const UsersView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Change Organization Brand Logo Modal (HR Exclusive) */}
+      <ChangeLogoModal
+        isOpen={showLogoModal}
+        onClose={() => setShowLogoModal(false)}
+      />
     </div>
   );
 };

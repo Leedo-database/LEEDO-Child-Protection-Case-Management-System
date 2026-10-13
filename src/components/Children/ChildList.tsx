@@ -500,17 +500,9 @@ export const ChildList: React.FC<ChildListProps> = ({
                       <tr key={child.id} className="hover:bg-slate-50/80 transition-colors">
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-3">
-                            {child.photoUrl ? (
-                              <img
-                                src={child.photoUrl}
-                                alt={child.name}
-                                className="w-10 h-10 rounded-lg object-cover ring-1 ring-slate-200 shrink-0"
-                              />
-                            ) : (
-                              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-rose-500 to-rose-700 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
-                                {child.name.slice(0, 2).toUpperCase()}
-                              </div>
-                            )}
+                            <div className="w-10 h-10 rounded-lg bg-slate-900 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs font-mono">
+                              {child.name.slice(0, 2).toUpperCase()}
+                            </div>
                             <div>
                               <button
                                 onClick={() => onSelectChild(child.id)}
@@ -594,17 +586,9 @@ export const ChildList: React.FC<ChildListProps> = ({
               >
                 <div>
                   <div className="flex items-start gap-3 mb-3">
-                    {child.photoUrl ? (
-                      <img
-                        src={child.photoUrl}
-                        alt={child.name}
-                        className="w-14 h-14 rounded-xl object-cover ring-1 ring-slate-200 shrink-0"
-                      />
-                    ) : (
-                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-rose-500 to-rose-700 text-white font-bold text-base flex items-center justify-center shrink-0 shadow-2xs">
-                        {child.name.slice(0, 2).toUpperCase()}
-                      </div>
-                    )}
+                    <div className="w-14 h-14 rounded-xl bg-slate-900 text-white font-bold text-base flex items-center justify-center shrink-0 shadow-2xs font-mono">
+                      {child.name.slice(0, 2).toUpperCase()}
+                    </div>
                     <div className="flex-1 min-w-0">
                       <span className="text-[10px] font-mono font-bold text-slate-500">{child.id}</span>
                       <h3 className="font-bold text-sm text-slate-900 truncate group-hover:text-rose-600">

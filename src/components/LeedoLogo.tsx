@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 
 interface LeedoLogoProps {
@@ -25,7 +25,12 @@ export const LeedoLogo: React.FC<LeedoLogoProps> = ({
     // If rendered outside AppProvider
   }
 
-  const effectiveLogoUrl = customLogoProp !== undefined ? customLogoProp : appLogoUrl;
+  const localStoredLogo = typeof window !== 'undefined' ? localStorage.getItem('leedo_custom_logo_url') : null;
+  const effectiveLogoUrl = customLogoProp !== undefined ? customLogoProp : (appLogoUrl || localStoredLogo);
+
+  useEffect(() => {
+    setImageError(false);
+  }, [effectiveLogoUrl]);
 
   // Brand red colors of LEEDO
   const redColor = '#E31B23';

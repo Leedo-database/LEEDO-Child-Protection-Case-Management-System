@@ -120,11 +120,9 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
                   className="p-3.5 hover:bg-slate-50 flex items-center justify-between gap-3 cursor-pointer transition-colors"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <img
-                      src={child.photoUrl}
-                      alt={child.name}
-                      className="w-10 h-10 rounded-lg object-cover ring-1 ring-slate-200 shrink-0"
-                    />
+                    <div className="w-10 h-10 rounded-lg bg-slate-900 text-white font-bold text-xs flex items-center justify-center shrink-0 font-mono shadow-2xs">
+                      {child.name.slice(0, 2).toUpperCase()}
+                    </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-xs font-bold text-slate-900">{child.id}</span>

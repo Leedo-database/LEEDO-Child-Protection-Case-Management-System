@@ -27,7 +27,6 @@ const MainLayout: React.FC = () => {
     selectedChildId, 
     setSelectedChildId, 
     currentUser,
-    resetAllDataToDefault,
     syncDataToFirebase,
     isSyncingFirebase,
     language
@@ -203,30 +202,6 @@ const MainLayout: React.FC = () => {
                   >
                     <CloudUpload className={`w-3.5 h-3.5 ${isSyncingFirebase ? 'animate-spin' : ''}`} />
                     <span>{isSyncingFirebase ? 'Synchronizing...' : 'Sync to Firestore'}</span>
-                  </button>
-                </div>
-
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                  <div>
-                    <h3 className="font-bold text-sm text-slate-900">
-                      {language === 'bn' ? 'সিস্টেম ডাটা রিসেট' : 'Reset System Data'}
-                    </h3>
-                    <p className="text-slate-500">
-                      {language === 'bn' 
-                        ? 'সকল কেস ডাটা পরিষ্কার করে ভেরিফাইড অফিসিয়াল স্টাফ ও শেল্টার সহ ফ্রেশ সিস্টেমে ফিরুন' 
-                        : 'Reset system cases to a fresh operational state with verified staff roster and shelters'}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => {
-                      if (confirm(language === 'bn' ? 'আপনি কি সিস্টেমের সকল রেকর্ড রিসেট করতে চান?' : 'Reset system to a clean operational state?')) {
-                        resetAllDataToDefault();
-                      }
-                    }}
-                    className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    <span>{language === 'bn' ? 'ডাটা রিসেট' : 'Reset Data'}</span>
                   </button>
                 </div>
 

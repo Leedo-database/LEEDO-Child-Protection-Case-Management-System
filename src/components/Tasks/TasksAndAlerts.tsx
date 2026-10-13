@@ -366,11 +366,9 @@ export const TasksAndAlerts: React.FC = () => {
               }`}
             >
               <div className="flex items-start gap-3.5">
-                <img
-                  src={alert.photoUrl}
-                  alt={alert.childName}
-                  className="w-12 h-12 rounded-xl object-cover ring-1 ring-slate-200 shrink-0"
-                />
+                <div className="w-12 h-12 rounded-xl bg-slate-900 text-white font-bold text-sm flex items-center justify-center shrink-0 font-mono shadow-2xs">
+                  {alert.childName.slice(0, 2).toUpperCase()}
+                </div>
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded ${

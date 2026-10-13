@@ -440,11 +440,9 @@ export const Navbar: React.FC<NavbarProps> = ({
               className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-100 border border-slate-200 transition-colors focus:outline-hidden cursor-pointer"
               title="View your logged in Employee ID & Credentials"
             >
-              <img
-                src={currentUser.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256'}
-                alt={currentUser.name}
-                className="w-8 h-8 rounded-full object-cover ring-2 ring-rose-200"
-              />
+              <div className="w-8 h-8 rounded-full bg-slate-900 text-white font-bold text-xs flex items-center justify-center ring-2 ring-rose-200 shrink-0 shadow-2xs font-mono">
+                {currentUser.name ? currentUser.name.slice(0, 2).toUpperCase() : 'ST'}
+              </div>
               <div className="hidden xl:block text-left text-xs leading-tight">
                 <div className="font-bold text-slate-900 flex items-center gap-1.5">
                   <span>{currentUser.name}</span>
@@ -461,11 +459,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                 {/* Official Personnel Card Header */}
                 <div className="p-4 bg-gradient-to-r from-slate-900 to-slate-800 text-white">
                   <div className="flex items-center gap-3">
-                    <img
-                      src={currentUser.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256'}
-                      alt={currentUser.name}
-                      className="w-12 h-12 rounded-2xl object-cover ring-2 ring-rose-400"
-                    />
+                    <div className="w-12 h-12 rounded-2xl bg-white/10 text-white font-bold text-base flex items-center justify-center ring-2 ring-rose-400 shrink-0 font-mono">
+                      {currentUser.name ? currentUser.name.slice(0, 2).toUpperCase() : 'ST'}
+                    </div>
                     <div className="min-w-0 flex-1">
                       <div className="font-bold text-sm truncate">{currentUser.name}</div>
                       <div className="text-[11px] text-rose-300 font-medium truncate">{currentUser.designation || currentUser.role}</div>

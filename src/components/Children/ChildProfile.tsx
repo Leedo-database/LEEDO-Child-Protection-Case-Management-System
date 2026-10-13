@@ -24,6 +24,10 @@ import {
   Phone, 
   Check, 
   User, 
+  Sparkles,
+  GraduationCap,
+  Briefcase,
+  Award,
   ChevronRight,
   ExternalLink,
   RotateCcw,
@@ -48,6 +52,10 @@ import {
   AssignCounselingTaskModal,
   ReferChildModal
 } from './ChildProfileModals';
+import { 
+  AddPeaceHomeProgressModal, 
+  RecordPeaceHomeDepartureModal 
+} from '../PeaceHome/PeaceHomeModals';
 import { CaseStatus } from '../../types';
 
 interface ChildProfileProps {
@@ -73,14 +81,17 @@ export const ChildProfile: React.FC<ChildProfileProps> = ({ childId, onBack }) =
     assignCounselingTask,
     referChildToThirdParty,
     thirdPartyShelters,
-    addThirdPartyShelter
+    addThirdPartyShelter,
+    addPeaceHomeProgressRecord,
+    recordPeaceHomeDeparture,
+    cancelPeaceHomeDeparture
   } = useApp();
 
   const child = children.find((c) => c.id === childId);
 
   // Tab navigation
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'personal' | 'rescue' | 'shelter' | 'health' | 'counseling' | 'tracing' | 'family-visit' | 'reintegration' | 'referral' | 'follow-up' | 'lwn' | 'documents' | 'notes' | 'timeline'
+    'overview' | 'peace-home' | 'personal' | 'rescue' | 'shelter' | 'health' | 'counseling' | 'tracing' | 'family-visit' | 'reintegration' | 'referral' | 'follow-up' | 'lwn' | 'documents' | 'notes' | 'timeline'
   >('overview');
 
   // Modal states
@@ -92,6 +103,8 @@ export const ChildProfile: React.FC<ChildProfileProps> = ({ childId, onBack }) =
   const [reintegrateModalOpen, setReintegrateModalOpen] = useState(false);
   const [referModalOpen, setReferModalOpen] = useState(false);
   const [lwnModalOpen, setLwnModalOpen] = useState(false);
+  const [peaceHomeProgressModalOpen, setPeaceHomeProgressModalOpen] = useState(false);
+  const [peaceHomeDepartureModalOpen, setPeaceHomeDepartureModalOpen] = useState(false);
   const [standardReportModalOpen, setStandardReportModalOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [actionFeedbackMsg, setActionFeedbackMsg] = useState('');
@@ -111,10 +124,26 @@ export const ChildProfile: React.FC<ChildProfileProps> = ({ childId, onBack }) =
   }
 
   const daysInShelter = getDaysInShelter(child);
-  const sixWeekAlert = getSixWeekAlertStatus(child);
+  const isPeaceHome = child.shelterName === 'LEEDO Peace Home' || 
+                      child.caseStatus === 'Peace Home Resident' ||
+                      child.caseStatus === 'Transitioned to General Life (Age 18+)' ||
+                      child.caseStatus === 'Peace Home Departed';
+
+  const sixWeekAlert = isPeaceHome 
+    ? { status: 'normal', daysInShelter, daysRemaining: 0, label: 'Peace Home Sanctuary (Up to 18y)', badgeClass: 'bg-emerald-50 text-emerald-800 border-emerald-200' } 
+    : getSixWeekAlertStatus(child);
   const healthAlert = getHealthAlert(child);
   const counselingAlert = getCounselingAlert(child);
   const pendingFollowUp = getNextPendingFollowUp(child);
+
+  // Peace Home Age 18 Calculations & General Life Transition Status
+  const yearsRemainingUntil18 = Math.max(0, 18 - (child.estimatedAge || 10));
+  const is18YearsCompleted = (child.estimatedAge || 10) >= 18;
+  const hasPeaceHomeDeparted = Boolean(
+    child.peaceHomeDeparture || 
+    child.caseStatus === 'Transitioned to General Life (Age 18+)' || 
+    child.caseStatus === 'Peace Home Departed'
+  );
 
   const handleStatusChange = (newStatus: CaseStatus) => {
     updateChild(child.id, { caseStatus: newStatus });
@@ -166,8 +195,63 @@ export const ChildProfile: React.FC<ChildProfileProps> = ({ childId, onBack }) =
 
       {/* CORE CHILD PROFILE HERO HEADER */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-        {/* Top critical alert banner inside header if over 6 weeks */}
-        {sixWeekAlert.status === 'exceeded' && (
+        {/* Peace Home 18-Year Sanctuary & General Life Transition Top Banner */}
+        {isPeaceHome ? (
+          <div className="bg-gradient-to-r from-emerald-900 via-teal-900 to-slate-900 text-white px-5 py-3 border-b border-emerald-800/40">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-emerald-500/20 text-emerald-300 rounded-2xl shrink-0 border border-emerald-400/20">
+                  <Sparkles className="w-5 h-5 text-emerald-300" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-black tracking-wide text-emerald-300 uppercase">
+                      LEEDO Peace Home (শান্তিনীড়) &bull; ১৮ বছর বয়স পর্যন্ত স্থায়ী আশ্রয় ও বিকাশ
+                    </span>
+                    {hasPeaceHomeDeparted ? (
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/30 text-purple-200 border border-purple-400/30">
+                        {child.peaceHomeDeparture?.exitType || 'প্রস্থান সম্পন্ন'}
+                      </span>
+                    ) : is18YearsCompleted ? (
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/30 text-amber-200 border border-amber-400/30">
+                        ১৮ বছর পূর্ণ — সাধারণ স্বাবলম্বী জীবনে পদার্পণের সময়
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/30 text-emerald-200 border border-emerald-400/30">
+                        বর্তমান আবাসিক শিশু ({yearsRemainingUntil18} বছর বাকি ১৮ পূর্ণ হতে)
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-300 mt-0.5">
+                    {language === 'bn'
+                      ? 'পিস হোমে শিশুরা ১৮ বছর পর্যন্ত বসবাস করতে পারে। এখানে তাদের সার্বিক অগ্রগতি ম্যানেজার, মাদার ও কাউন্সেলর মূল্যায়ন করেন। ১৮ বছর পর তারা স্বাবলম্বী সাধারণ জীবনযাপন করবে।'
+                      : 'Children can reside at LEEDO Peace Home until age 18. Progress is logged by Peace Home Manager, Mother, & Counselor towards 18+ general independent life.'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Action buttons on header */}
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setPeaceHomeProgressModalOpen(true)}
+                  className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>{language === 'bn' ? 'উন্নতি রেকর্ড যোগ' : 'Log Progress'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPeaceHomeDepartureModalOpen(true)}
+                  className="px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs"
+                >
+                  <GraduationCap className="w-3.5 h-3.5" />
+                  <span>{language === 'bn' ? 'প্রস্থান / ১৮+ রূপান্তর' : 'Departure / 18+ Exit'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : sixWeekAlert.status === 'exceeded' ? (
           <div className="bg-rose-50 border-b border-rose-200 px-5 py-2.5 flex items-center justify-between text-xs text-rose-900 font-semibold">
             <div className="flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
@@ -180,22 +264,14 @@ export const ChildProfile: React.FC<ChildProfileProps> = ({ childId, onBack }) =
               Action Reintegration
             </button>
           </div>
-        )}
+        ) : null}
 
         <div className="p-4 sm:p-6 flex flex-col md:flex-row gap-5 items-start">
-          {/* Child Photo / Avatar */}
+          {/* Child Identifier Monogram */}
           <div className="relative shrink-0">
-            {child.photoUrl ? (
-              <img
-                src={child.photoUrl}
-                alt={child.name}
-                className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover ring-2 ring-slate-100 shadow-sm"
-              />
-            ) : (
-              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-gradient-to-br from-rose-500 to-rose-700 text-white font-black text-3xl sm:text-4xl flex items-center justify-center shadow-sm">
-                {child.name.slice(0, 2).toUpperCase()}
-              </div>
-            )}
+            <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 text-white font-black text-3xl sm:text-4xl flex items-center justify-center shadow-sm font-mono border-2 border-slate-700">
+              {child.name.slice(0, 2).toUpperCase()}
+            </div>
             <span className="absolute -bottom-2 -right-2 px-2 py-0.5 bg-slate-900 text-white text-[10px] font-mono font-bold rounded-md shadow-xs">
               {child.id}
             </span>
@@ -251,10 +327,22 @@ export const ChildProfile: React.FC<ChildProfileProps> = ({ childId, onBack }) =
                 )}
               </div>
 
-              {/* 6-Week Badge */}
-              <span className={`px-2.5 py-1 text-xs rounded-lg font-bold border ${sixWeekAlert.badgeClass}`}>
-                {sixWeekAlert.label} ({daysInShelter}d)
-              </span>
+              {/* Shelter Status / 18y Sanctuary Badge */}
+              {child.shelterName === 'LEEDO Peace Home' || child.caseStatus === 'Peace Home Resident' ? (
+                <span className="px-2.5 py-1 text-xs rounded-lg font-bold border bg-emerald-50 text-emerald-800 border-emerald-200 inline-flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>{language === 'bn' ? 'পিস হোম স্থায়ী যত্ন (১৮ বছর বয়স পর্যন্ত)' : 'Peace Home Sanctuary (Up to 18y)'}</span>
+                </span>
+              ) : child.caseStatus === 'Transitioned to General Life (Age 18+)' ? (
+                <span className="px-2.5 py-1 text-xs rounded-lg font-bold border bg-purple-50 text-purple-800 border-purple-200 inline-flex items-center gap-1.5">
+                  <GraduationCap className="w-3.5 h-3.5 text-purple-600" />
+                  <span>{language === 'bn' ? '১৮+ সাধারণ জীবনে পদার্পণ সম্পন্ন' : 'Transitioned to General Life (18+)'}</span>
+                </span>
+              ) : (
+                <span className={`px-2.5 py-1 text-xs rounded-lg font-bold border ${sixWeekAlert.badgeClass}`}>
+                  {sixWeekAlert.label} ({daysInShelter}d)
+                </span>
+              )}
             </div>
 
             {/* Quick Specs */}
@@ -280,6 +368,15 @@ export const ChildProfile: React.FC<ChildProfileProps> = ({ childId, onBack }) =
 
           {/* Quick Action Button Group */}
           <div className="flex md:flex-col gap-2 shrink-0 w-full md:w-auto no-print">
+            {isPeaceHome && (
+              <button
+                onClick={() => setActiveTab('peace-home')}
+                className="flex-1 md:flex-initial px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                <span>{language === 'bn' ? `পিস হোম বিকাশ (${child.peaceHomeProgressRecords?.length || 0})` : 'Peace Home Dev'}</span>
+              </button>
+            )}
             <button
               onClick={() => setCaseNoteModalOpen(true)}
               className="flex-1 md:flex-initial px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
@@ -308,6 +405,12 @@ export const ChildProfile: React.FC<ChildProfileProps> = ({ childId, onBack }) =
         <div className="bg-slate-50 border-t border-slate-200 px-4 flex items-center gap-1 overflow-x-auto text-xs font-semibold scrollbar-none no-print">
           {[
             { id: 'overview', label: 'Overview', icon: Home },
+            { 
+              id: 'peace-home', 
+              label: language === 'bn' ? 'পিস হোম ও ১৮+ রূপান্তর' : 'Peace Home & 18+ Transition', 
+              icon: Sparkles, 
+              count: child.peaceHomeProgressRecords?.length || 0 
+            },
             { id: 'personal', label: 'Personal Info', icon: User },
             { id: 'rescue', label: 'Rescue & Police GD', icon: ShieldCheck },
             { id: 'shelter', label: 'Shelter Stay', icon: Building2 },
@@ -553,6 +656,339 @@ export const ChildProfile: React.FC<ChildProfileProps> = ({ childId, onBack }) =
                   </button>
                 )}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* PEACE HOME TAB: PROGRESS & 18+ GENERAL LIFE TRANSITION */}
+        {activeTab === 'peace-home' && (
+          <div className="space-y-4">
+            {/* Top Philosophy & Mandate Banner */}
+            <div className="bg-gradient-to-br from-emerald-900 via-teal-900 to-slate-900 text-white p-6 rounded-3xl border border-emerald-800 shadow-md">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="max-w-2xl">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/20 border border-emerald-400/30 rounded-full text-emerald-300 text-xs font-bold mb-2">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>{language === 'bn' ? 'লিডো শান্তিনীড় — ১৮ বছর বয়স পর্যন্ত স্থায়ী যত্ন ও সুরক্ষা' : 'LEEDO Peace Home — Up to 18 Years Care & Sanctuary'}</span>
+                  </div>
+                  <h2 className="text-xl font-black font-display text-white">
+                    {language === 'bn' ? 'পিস হোম সার্বিক বিকাশ ও ১৮ বছর পরবর্তী সাধারণ জীবন' : 'Holistic Development & Age 18+ Independent Life Transition'}
+                  </h2>
+                  <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                    {language === 'bn'
+                      ? 'লিডো পিস হোমে শিশুরা সর্বোচ্চ ১৮ বছর বয়স পর্যন্ত নিরাপদে বসবাস করে। এখানে অবস্থানকালে তাদের প্রতিটি পদক্ষেপের উন্নতি পর্যবেক্ষণ ও লিপিবদ্ধ করেন: ম্যানেজার পিস হোম, পিস হোম মাদার এবং সাইকোসোশ্যাল কাউন্সেলর। ১৮ বছর পূর্ণ হওয়ার পর প্রতিটি শিশুকে সম্মানজনক সাধারণ স্বাবলম্বী জীবনে পদার্পণ করানো হয়।'
+                      : 'Children reside safely at LEEDO Peace Home until age 18. Continuous developmental assessments are officially logged by Manager Peace Home, Peace Home Mother, and Psychosocial Counselor to prepare every youth for thriving independent general life upon turning 18.'}
+                  </p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+                  <button
+                    onClick={() => setPeaceHomeProgressModalOpen(true)}
+                    className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>{language === 'bn' ? 'উন্নতি/বিকাশ রেকর্ড যোগ করুন' : 'Add Progress Record'}</span>
+                  </button>
+                  <button
+                    onClick={() => setPeaceHomeDepartureModalOpen(true)}
+                    className="px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <GraduationCap className="w-4 h-4" />
+                    <span>{language === 'bn' ? 'প্রস্থান / ১৮+ রূপান্তর রেকর্ড' : 'Record Departure / 18+ Exit'}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* 18-Year Age Readiness & Timeline Card */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Age Countdown Card */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] uppercase font-bold text-slate-400">
+                    {language === 'bn' ? '১৮ বছর রূপান্তর ট্র্যাকার' : 'Age 18 Transition Tracker'}
+                  </span>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                    is18YearsCompleted ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
+                  }`}>
+                    {is18YearsCompleted ? (language === 'bn' ? '১৮ বছর পূর্ণ' : '18 Completed') : `${yearsRemainingUntil18} ${language === 'bn' ? 'বছর বাকি' : 'yrs left'}`}
+                  </span>
+                </div>
+                <div className="text-2xl font-black text-slate-900 font-display">
+                  {child.estimatedAge} <span className="text-sm font-semibold text-slate-500">/ ১৮ {language === 'bn' ? 'বছর' : 'years'}</span>
+                </div>
+                <div className="w-full bg-slate-100 h-2.5 rounded-full mt-3 overflow-hidden">
+                  <div 
+                    className="bg-gradient-to-r from-emerald-500 to-teal-500 h-full rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min(100, Math.round((child.estimatedAge / 18) * 100))}%` }}
+                  />
+                </div>
+                <p className="text-[11px] text-slate-500 mt-2">
+                  {is18YearsCompleted
+                    ? (language === 'bn' ? '১৮ বছর পূর্ণ হয়েছে। স্বাবলম্বী সাধারণ জীবনে রূপান্তরের জন্য প্রস্তুত।' : 'Youth has turned 18. Ready for independent living transition.')
+                    : (language === 'bn' ? `১৮ বছর বয়সে সাধারণ জীবনে রূপান্তরের জন্য আর ${yearsRemainingUntil18} বছর পিস হোমে প্রশিক্ষণ ও তত্ত্বাবধান চলবে।` : `${yearsRemainingUntil18} years remaining in Peace Home sanctuary.`)}
+                </p>
+              </div>
+
+              {/* Assessment Stats Card */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block mb-2">
+                  {language === 'bn' ? 'কর্মকর্তাভিত্তিক মোট মূল্যায়ন' : 'Evaluations by Key Staff'}
+                </span>
+                <div className="grid grid-cols-3 gap-2 text-center pt-1">
+                  <div className="p-2 bg-indigo-50 rounded-xl">
+                    <div className="text-lg font-black text-indigo-700">
+                      {(child.peaceHomeProgressRecords || []).filter(r => r.authorRole?.toLowerCase().includes('manager')).length}
+                    </div>
+                    <div className="text-[10px] font-bold text-indigo-900 mt-0.5">ম্যানেজার</div>
+                  </div>
+                  <div className="p-2 bg-rose-50 rounded-xl">
+                    <div className="text-lg font-black text-rose-700">
+                      {(child.peaceHomeProgressRecords || []).filter(r => r.authorRole?.toLowerCase().includes('mother')).length}
+                    </div>
+                    <div className="text-[10px] font-bold text-rose-900 mt-0.5">মাদার</div>
+                  </div>
+                  <div className="p-2 bg-emerald-50 rounded-xl">
+                    <div className="text-lg font-black text-emerald-700">
+                      {(child.peaceHomeProgressRecords || []).filter(r => r.authorRole?.toLowerCase().includes('counselor')).length}
+                    </div>
+                    <div className="text-[10px] font-bold text-emerald-900 mt-0.5">কাউন্সেলর</div>
+                  </div>
+                </div>
+                <div className="text-[11px] text-slate-500 text-center mt-3">
+                  {language === 'bn' ? 'মোট অগ্রগতি লগ:' : 'Total Progress Logs:'} <strong className="text-slate-800">{child.peaceHomeProgressRecords?.length || 0} {language === 'bn' ? 'টি' : 'records'}</strong>
+                </div>
+              </div>
+
+              {/* General Life Objective Card */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
+                <span className="text-[10px] uppercase font-bold text-slate-400 block mb-2">
+                  {language === 'bn' ? '১৮ বছর পর সাধারণ জীবনের রূপরেখা' : 'Age 18 General Life Framework'}
+                </span>
+                <ul className="text-[11px] text-slate-600 space-y-1.5">
+                  <li className="flex items-center gap-1.5 text-slate-800 font-medium">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span>স্বাবলম্বী চাকরি বা কারিগরি কর্মসংস্থান</span>
+                  </li>
+                  <li className="flex items-center gap-1.5 text-slate-800 font-medium">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span>ব্যক্তিগত ব্যাংক একাউন্ট ও এনআইডি সুরক্ষা</span>
+                  </li>
+                  <li className="flex items-center gap-1.5 text-slate-800 font-medium">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span>হোস্টেল/স্বতন্ত্র নিরাপদ বাসস্থান ব্যবস্থাপনা</span>
+                  </li>
+                  <li className="flex items-center gap-1.5 text-slate-800 font-medium">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span>১ বছর মেয়াদী নিয়মিত ফলোআপ ভিজিট</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* DEPARTURE DOSSIER CARD (If Child Has Departed / Transitioned) */}
+            {child.peaceHomeDeparture && (
+              <div className="bg-gradient-to-br from-amber-50 via-rose-50/40 to-white p-6 rounded-3xl border-2 border-amber-300 shadow-sm space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-amber-200">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-amber-500 text-white rounded-2xl shadow-xs">
+                      <GraduationCap className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-amber-200 text-amber-950 uppercase">
+                          {child.peaceHomeDeparture.exitType}
+                        </span>
+                        <span className="text-xs font-semibold text-slate-500 font-mono">
+                          তারিখ: {child.peaceHomeDeparture.departureDate}
+                        </span>
+                      </div>
+                      <h3 className="text-base font-bold text-slate-900 mt-1 font-display">
+                        {language === 'bn' ? 'পিস হোম প্রস্থান ও স্বাবলম্বী সাধারণ জীবন বিবরণী' : 'Peace Home Departure & General Life Dossier'}
+                      </h3>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      if (confirm(language === 'bn' ? 'আপনি কি প্রস্থান বাতিল করে এই শিশুকে পুনরায় পিস হোমের সক্রিয় আবাসিক করতে চান?' : 'Reopen child back to active Peace Home resident?')) {
+                        cancelPeaceHomeDeparture(child.id, 'Canceled departure record by user');
+                      }
+                    }}
+                    className="px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-xl text-xs font-semibold transition-colors cursor-pointer self-start sm:self-auto"
+                  >
+                    {language === 'bn' ? 'প্রস্থান বাতিল ও পুনর্বহাল' : 'Reopen / Restore Resident'}
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                  <div className="p-3 bg-white rounded-xl border border-amber-200/80">
+                    <span className="text-slate-400 block text-[10px] font-semibold uppercase">প্রস্থানকালে বয়স</span>
+                    <span className="font-bold text-slate-900 text-sm">{child.peaceHomeDeparture.ageAtDeparture} বছর</span>
+                  </div>
+                  <div className="p-3 bg-white rounded-xl border border-amber-200/80">
+                    <span className="text-slate-400 block text-[10px] font-semibold uppercase">বর্তমান অবস্থান / ঠিকানা</span>
+                    <span className="font-bold text-slate-900 text-xs">{child.peaceHomeDeparture.newAddressOrLocation}</span>
+                  </div>
+                  <div className="p-3 bg-white rounded-xl border border-amber-200/80">
+                    <span className="text-slate-400 block text-[10px] font-semibold uppercase">যোগাযোগ মোবাইল নম্বর</span>
+                    <span className="font-mono font-bold text-slate-900">{child.peaceHomeDeparture.contactNumber || 'N/A'}</span>
+                  </div>
+                  <div className="p-3 bg-white rounded-xl border border-amber-200/80">
+                    <span className="text-slate-400 block text-[10px] font-semibold uppercase">অনুমোদনকারী কর্মকর্তা</span>
+                    <span className="font-bold text-slate-900">{child.peaceHomeDeparture.authorizedBy}</span>
+                  </div>
+                </div>
+
+                {/* Specifics for 18+ general life */}
+                {(child.peaceHomeDeparture.occupationOrJobTitle || child.peaceHomeDeparture.monthlyIncomeBdt) && (
+                  <div className="p-4 bg-white rounded-2xl border border-emerald-200 space-y-2">
+                    <h4 className="font-bold text-xs text-emerald-950 flex items-center gap-1.5">
+                      <Briefcase className="w-4 h-4 text-emerald-600" />
+                      <span>১৮+ সাধারণ জীবনের জীবিকা ও বাসস্থান:</span>
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">পেশা / কর্মসংস্থান:</span>
+                        <strong className="text-slate-800">{child.peaceHomeDeparture.occupationOrJobTitle} ({child.peaceHomeDeparture.employerOrOrganization || 'ব্যক্তিগত'})</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">মাসিক আনুমানিক আয়:</span>
+                        <strong className="text-emerald-700 font-mono">৳{child.peaceHomeDeparture.monthlyIncomeBdt || 0} / মাস</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">বাসস্থানের ধরন:</span>
+                        <strong className="text-slate-800">{child.peaceHomeDeparture.livingArrangement || 'হোস্টেল'}</strong>
+                      </div>
+                    </div>
+                    {child.peaceHomeDeparture.starterSupportProvided && (
+                      <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-600">
+                        <strong className="text-slate-700">প্রদত্ত প্রারম্ভিক সহায়তা: </strong>
+                        {child.peaceHomeDeparture.starterSupportProvided}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {child.peaceHomeDeparture.followUpPlan && (
+                  <div className="text-xs text-slate-600 bg-white p-3 rounded-xl border border-slate-200">
+                    <strong className="text-slate-800">ফলোআপ পরিকল্পনা: </strong>
+                    {child.peaceHomeDeparture.followUpPlan}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* List of Progress & Development Records */}
+            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-2xs space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                <div>
+                  <h3 className="font-bold text-base text-slate-900 font-display">
+                    {language === 'bn' ? 'পিস হোমে শিশুর সামগ্রিক উন্নতি ও পর্যবেক্ষণ রেকর্ড' : 'Peace Home Developmental Progress Log'}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    {language === 'bn' 
+                      ? 'ম্যানেজার পিস হোম, পিস হোম মাদার ও সাইকোসোশ্যাল কাউন্সেলরের নিয়মিত পর্যবেক্ষণ'
+                      : 'Logged by Peace Home Manager, Mother, & Psychosocial Counselor'}
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => setPeaceHomeProgressModalOpen(true)}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs self-start sm:self-auto"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>{language === 'bn' ? 'নতুন মূল্যায়ন যোগ করুন' : 'Add Evaluation'}</span>
+                </button>
+              </div>
+
+              {(!child.peaceHomeProgressRecords || child.peaceHomeProgressRecords.length === 0) ? (
+                <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200/80 text-slate-500 space-y-3">
+                  <Sparkles className="w-10 h-10 text-emerald-500 mx-auto opacity-70" />
+                  <div>
+                    <h4 className="font-bold text-sm text-slate-800">
+                      {language === 'bn' ? 'এখনো কোনো উন্নতি রেকর্ড যোগ করা হয়নি' : 'No development progress recorded yet'}
+                    </h4>
+                    <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+                      {language === 'bn'
+                        ? 'ম্যানেজার পিস হোম, পিস হোম মাদার বা সাইকোসোশ্যাল কাউন্সেলর হিসেবে শিশুর মানসিক, আচরণগত, শিক্ষা বা জীবন দক্ষতার উন্নতি রেকর্ড করুন।'
+                        : 'Peace Home Manager, Mother, or Counselor can log developmental progress.'}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setPeaceHomeProgressModalOpen(true)}
+                    className="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition-colors cursor-pointer inline-flex items-center gap-1.5"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>{language === 'bn' ? 'প্রথম উন্নতি রেকর্ড লিখুন' : 'Log First Progress Record'}</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {child.peaceHomeProgressRecords.map((rec) => {
+                    const isManager = rec.authorRole?.toLowerCase().includes('manager');
+                    const isMother = rec.authorRole?.toLowerCase().includes('mother');
+                    const isCounselor = rec.authorRole?.toLowerCase().includes('counselor');
+
+                    return (
+                      <div 
+                        key={rec.id}
+                        className="p-4 bg-slate-50/70 hover:bg-white rounded-2xl border border-slate-200 hover:border-emerald-300 transition-all space-y-2.5 shadow-2xs"
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-bold text-sm text-slate-900">{rec.title}</span>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              rec.score === 'Excellent' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' :
+                              rec.score === 'Steady Progress' ? 'bg-blue-100 text-blue-800 border border-blue-300' :
+                              rec.score === 'Moderate' ? 'bg-amber-100 text-amber-800 border border-amber-300' :
+                              'bg-rose-100 text-rose-800 border border-rose-300'
+                            }`}>
+                              {rec.score}
+                            </span>
+                            <span className="px-2 py-0.5 bg-slate-200/80 text-slate-700 rounded-md text-[10px] font-medium">
+                              {rec.category}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className={`px-2 py-0.5 rounded-md font-bold text-[10px] ${
+                              isManager ? 'bg-indigo-100 text-indigo-900' :
+                              isMother ? 'bg-rose-100 text-rose-900' :
+                              isCounselor ? 'bg-emerald-100 text-emerald-900' :
+                              'bg-slate-200 text-slate-800'
+                            }`}>
+                              {rec.authorRole}: {rec.authorName}
+                            </span>
+                            <span className="text-[11px] font-mono text-slate-400">{rec.date}</span>
+                          </div>
+                        </div>
+
+                        <p className="text-xs text-slate-700 leading-relaxed bg-white p-3 rounded-xl border border-slate-200/70">
+                          {rec.observations}
+                        </p>
+
+                        {rec.age18PreparationNotes && (
+                          <div className="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 text-[11px] text-emerald-950 flex items-start gap-2">
+                            <GraduationCap className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
+                            <div>
+                              <strong className="font-bold">১৮ বছর পূর্ণে স্বাবলম্বী সাধারণ জীবনের প্রস্তুতি: </strong>
+                              <span>{rec.age18PreparationNotes}</span>
+                            </div>
+                          </div>
+                        )}
+
+                        {rec.nextSteps && (
+                          <div className="text-[11px] text-slate-500 pl-1">
+                            <strong className="text-slate-700">পরবর্তী পদক্ষেপ: </strong>
+                            {rec.nextSteps}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -1372,6 +1808,38 @@ export const ChildProfile: React.FC<ChildProfileProps> = ({ childId, onBack }) =
             language === 'bn'
               ? `শিশুটিকে সফলভাবে "${data.shelterName}" এ রেফার করা হয়েছে এবং কেস স্ট্যাটাস আপডেট হয়েছে।`
               : `Child successfully referred to "${data.shelterName}" and case status updated.`
+          );
+          setTimeout(() => setActionFeedbackMsg(''), 5000);
+        }}
+      />
+
+      {/* Add Peace Home Progress Assessment Modal */}
+      <AddPeaceHomeProgressModal
+        isOpen={peaceHomeProgressModalOpen}
+        onClose={() => setPeaceHomeProgressModalOpen(false)}
+        child={child}
+        onAdd={(data) => {
+          addPeaceHomeProgressRecord(child.id, data);
+          setActionFeedbackMsg(
+            language === 'bn'
+              ? `পিস হোম অগ্রগতি ও বিকাশ রেকর্ড সফলভাবে সংরক্ষিত হয়েছে (${data.authorRole}: ${data.title})!`
+              : `Peace Home progress record logged successfully (${data.authorRole}: ${data.title})!`
+          );
+          setTimeout(() => setActionFeedbackMsg(''), 5000);
+        }}
+      />
+
+      {/* Record Peace Home Departure / 18+ Transition Modal */}
+      <RecordPeaceHomeDepartureModal
+        isOpen={peaceHomeDepartureModalOpen}
+        onClose={() => setPeaceHomeDepartureModalOpen(false)}
+        child={child}
+        onRecord={(data) => {
+          recordPeaceHomeDeparture(child.id, data);
+          setActionFeedbackMsg(
+            language === 'bn'
+              ? `পিস হোম প্রস্থান ও রূপান্তর রেকর্ড সফলভাবে হালনাগাদ হয়েছে (${data.exitType})!`
+              : `Peace Home departure and transition record updated successfully (${data.exitType})!`
           );
           setTimeout(() => setActionFeedbackMsg(''), 5000);
         }}

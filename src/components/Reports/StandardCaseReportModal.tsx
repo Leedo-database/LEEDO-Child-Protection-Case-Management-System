@@ -108,11 +108,9 @@ export const StandardCaseReportModal: React.FC<StandardCaseReportModalProps> = (
 
           {/* Child Identity Profile Summary */}
           <div className="bg-slate-50 border border-slate-300 rounded-2xl p-4 mb-6 flex flex-col sm:flex-row items-start gap-5">
-            <img
-              src={child.photoUrl}
-              alt={child.name}
-              className="w-28 h-28 rounded-xl object-cover border border-slate-300 shadow-xs shrink-0"
-            />
+            <div className="w-24 h-24 rounded-xl bg-slate-900 text-white font-bold text-2xl flex items-center justify-center shrink-0 font-mono shadow-xs border border-slate-400">
+              {child.name.slice(0, 2).toUpperCase()}
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs w-full">
               <div>
                 <span className="text-slate-500 font-semibold block text-[10px] uppercase">Full Legal Name:</span>

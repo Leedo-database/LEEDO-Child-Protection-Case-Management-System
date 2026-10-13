@@ -24,7 +24,9 @@ import {
   VTCAttendanceStatus,
   StaffPermissions,
   ThirdPartyShelter,
-  StaffNotification
+  StaffNotification,
+  PeaceHomeProgressRecord,
+  PeaceHomeDepartureRecord
 } from '../types';
 import { INITIAL_CHILDREN, INITIAL_AUDIT_LOGS, INITIAL_SUS_SESSIONS } from '../data/mockData';
 import { OFFICIAL_LEEDO_USERS, OFFICIAL_LEEDO_SHELTERS, INITIAL_VTC_STUDENTS } from '../data/officialRoster';
@@ -100,6 +102,9 @@ interface AppContextType {
   deleteShelter: (id: string) => void;
   archiveChild: (childId: string) => void;
   deleteChildPermanently: (childId: string) => boolean;
+  addPeaceHomeProgressRecord: (childId: string, record: Omit<PeaceHomeProgressRecord, 'id' | 'createdAt'>) => void;
+  recordPeaceHomeDeparture: (childId: string, record: PeaceHomeDepartureRecord) => void;
+  cancelPeaceHomeDeparture: (childId: string, notes?: string) => void;
   resetAllDataToDefault: () => void;
   wipeAllDemoData: () => void;
 
@@ -1701,12 +1706,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
     if (!child) return;
     const today = getTodayDateString();
 
-    const actualNotes = notes || (roomOrBed && !notes ? `Bed Allocation: ${roomOrBed}` : '') || 'Child completed transitional stay at Kamalapur/Kadamtali. Family tracing could not reunite and govt shelter unavailable. Transferred to LEEDO Peace Home for long-term safe upbringing, education, and life skills.';
+    const actualNotes = notes || (roomOrBed && !notes ? `Bed Allocation: ${roomOrBed}` : '') || 'Child completed transitional stay at Kamalapur/Kadamtali. Family tracing could not reunite and govt shelter unavailable. Transferred to LEEDO Peace Home for long-term safe upbringing, education, life skills, and preparation for age 18 general life.';
 
     const newTimelineItem = {
       id: `tl-${Date.now()}`,
       date: today,
-      title: 'Transferred to LEEDO Peace Home (Sanctuary up to 17y)',
+      title: 'Transferred to LEEDO Peace Home (Sanctuary up to 18y)',
       description: actualNotes,
       category: 'Shelter' as const,
       actor: currentUser.name,
@@ -1717,7 +1722,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
       date: today,
       author: currentUser.name,
       authorRole: currentUser.role,
-      note: `Formal referral & transfer from ${child.shelterName} to LEEDO Peace Home for long-term care up to age 17. ${actualNotes}`,
+      note: `Formal referral & transfer from ${child.shelterName} to LEEDO Peace Home for long-term care up to age 18. ${actualNotes}`,
       isConfidential: false,
     };
 
@@ -1728,7 +1733,135 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
       roomOrBed: roomOrBed || child.roomOrBed,
       timeline: [newTimelineItem, ...(child.timeline || [])],
       caseNotes: [newCaseNote, ...(child.caseNotes || [])],
-    }, `Transferred child ${child.name} (${child.id}) to LEEDO Peace Home for long-term care`);
+    }, `Transferred child ${child.name} (${child.id}) to LEEDO Peace Home for care up to 18 years`);
+  };
+
+  const addPeaceHomeProgressRecord = (childId: string, record: Omit<PeaceHomeProgressRecord, 'id' | 'createdAt'>) => {
+    const newRecord: PeaceHomeProgressRecord = {
+      ...record,
+      id: `ph-prog-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+    };
+
+    const newTimelineItem = {
+      id: `tl-${Date.now()}`,
+      date: record.date,
+      title: `পিস হোম উন্নতি ও বিকাশ (${record.category})`,
+      description: `${record.authorRole} (${record.authorName}): ${record.title} • মূল্যায়ন: ${record.score}`,
+      category: 'Shelter' as const,
+      actor: record.authorName,
+    };
+
+    const newCaseNote: CaseNote = {
+      id: `cn-${Date.now()}`,
+      date: record.date,
+      author: record.authorName,
+      authorRole: record.authorRole,
+      note: `[Peace Home Progress - ${record.category}] ${record.title} (মূল্যায়ন: ${record.score})\nপর্যবেক্ষণ: ${record.observations}\n১৮ বছর বয়সে সাধারণ জীবনের প্রস্তুতি: ${record.age18PreparationNotes || 'N/A'}\nপরবর্তী পদক্ষেপ: ${record.nextSteps || 'N/A'}`,
+      isConfidential: false,
+    };
+
+    setChildrenList((prev) =>
+      prev.map((c) => {
+        if (c.id === childId) {
+          const updated: Child = {
+            ...c,
+            peaceHomeProgressRecords: [newRecord, ...(c.peaceHomeProgressRecords || [])],
+            timeline: [newTimelineItem, ...(c.timeline || [])],
+            caseNotes: [newCaseNote, ...(c.caseNotes || [])],
+            updatedAt: new Date().toISOString(),
+          };
+          syncChildToCloud(childId, updated);
+          return updated;
+        }
+        return c;
+      })
+    );
+    addAuditEntry('ADD_PEACE_HOME_PROGRESS', childId, `Logged Peace Home development assessment (${record.category}: ${record.score}) by ${record.authorRole} ${record.authorName}`);
+  };
+
+  const recordPeaceHomeDeparture = (childId: string, record: PeaceHomeDepartureRecord) => {
+    const isAge18Transition = record.exitType === 'Transitioned to General Life (Age 18+ Graduated)';
+    const newStatus: CaseStatus = isAge18Transition
+      ? 'Transitioned to General Life (Age 18+)'
+      : record.exitType === 'Family Reintegration'
+      ? 'Reintegrated'
+      : 'Peace Home Departed';
+
+    const newTimelineItem = {
+      id: `tl-${Date.now()}`,
+      date: record.departureDate,
+      title: isAge18Transition
+        ? '🎓 ১৮ বছর পূর্ণ করে স্বাবলম্বী সাধারণ জীবনে রূপান্তর (Age 18+ General Life Transition)'
+        : `পিস হোম থেকে প্রস্থান (${record.exitType})`,
+      description: isAge18Transition
+        ? `পিস হোমে ১৮ বছর পূর্ণ করে সফলভাবে সাধারণ স্বাবলম্বী জীবনে পদার্পণ করেছে। পেশা/চাকরি: ${record.occupationOrJobTitle || 'স্বাবলম্বী জীবিকা'}। অনুমোদক: ${record.authorizedBy}।`
+        : `প্রস্থানের ধরন: ${record.exitType}। ঠিকানা: ${record.newAddressOrLocation}। অনুমোদক: ${record.authorizedBy}।`,
+      category: 'Status Change' as const,
+      actor: record.authorizedBy || currentUser.name,
+    };
+
+    const newCaseNote: CaseNote = {
+      id: `cn-${Date.now()}`,
+      date: record.departureDate,
+      author: record.authorizedBy || currentUser.name,
+      authorRole: currentUser.role,
+      note: `[Peace Home Departure / Transition]\nপ্রস্থানের ধরন: ${record.exitType}\nবয়স: ${record.ageAtDeparture} বছর\nনতুন অবস্থান/ঠিকানা: ${record.newAddressOrLocation} (${record.contactNumber || 'No Phone'})\nপেশা/কর্মসংস্থান: ${record.occupationOrJobTitle || 'N/A'} (${record.employerOrOrganization || 'N/A'})\nবাসস্থান: ${record.livingArrangement || 'N/A'}\nপ্রারম্ভিক সহায়তা: ${record.starterSupportProvided || 'N/A'}\nমন্তব্য: ${record.finalRemarks}`,
+      isConfidential: false,
+    };
+
+    setChildrenList((prev) =>
+      prev.map((c) => {
+        if (c.id === childId) {
+          const updated: Child = {
+            ...c,
+            caseStatus: newStatus,
+            currentShelterStatus: 'Transferred',
+            isTransitionedToGeneralLife: isAge18Transition,
+            peaceHomeDeparture: record,
+            timeline: [newTimelineItem, ...(c.timeline || [])],
+            caseNotes: [newCaseNote, ...(c.caseNotes || [])],
+            updatedAt: new Date().toISOString(),
+          };
+          syncChildToCloud(childId, updated);
+          return updated;
+        }
+        return c;
+      })
+    );
+    addAuditEntry('PEACE_HOME_DEPARTURE', childId, `Recorded Peace Home exit/transition (${record.exitType}) for child at age ${record.ageAtDeparture}`);
+  };
+
+  const cancelPeaceHomeDeparture = (childId: string, notes?: string) => {
+    setChildrenList((prev) =>
+      prev.map((c) => {
+        if (c.id === childId) {
+          const updated: Child = {
+            ...c,
+            caseStatus: 'Peace Home Resident',
+            currentShelterStatus: 'Active Resident',
+            isTransitionedToGeneralLife: false,
+            peaceHomeDeparture: undefined,
+            timeline: [
+              {
+                id: `tl-${Date.now()}`,
+                date: getTodayDateString(),
+                title: 'পিস হোম আবাসিক স্থিতি পুনর্বহাল (Reopened to Active Resident)',
+                description: notes || 'Child departure record canceled and restored to active residence at LEEDO Peace Home.',
+                category: 'Shelter',
+                actor: currentUser.name,
+              },
+              ...(c.timeline || [])
+            ],
+            updatedAt: new Date().toISOString(),
+          };
+          syncChildToCloud(childId, updated);
+          return updated;
+        }
+        return c;
+      })
+    );
+    addAuditEntry('REOPEN_PEACE_HOME_RESIDENT', childId, `Reopened child back to active LEEDO Peace Home resident`);
   };
 
   // School Under the Sky (SUS) methods
@@ -2350,6 +2483,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
         deleteShelter,
         archiveChild,
         deleteChildPermanently,
+        addPeaceHomeProgressRecord,
+        recordPeaceHomeDeparture,
+        cancelPeaceHomeDeparture,
         resetAllDataToDefault,
         wipeAllDemoData,
 

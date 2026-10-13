@@ -33,7 +33,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     updateCustomLogo,
     syncDataToFirebase,
     isSyncingFirebase,
-    resetAllDataToDefault,
     language,
     children,
     users,
@@ -41,10 +40,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     vtcStudents,
   } = useApp();
 
+  // Strict HR Administration check: Only HR has authority to change brand logo
   const isHrAdmin = 
-    isHrOrKantaUser || 
-    currentUser.role === 'Super Admin' || 
-    Boolean(currentUser.permissions?.canManageHR);
+    Boolean(isHrOrKantaUser) ||
+    currentUser.email?.toLowerCase().trim() === 'hr.leedo2000@gmail.com' ||
+    currentUser.email?.toLowerCase().trim() === 'kanta.leedo@gmail.com' ||
+    currentUser.employeeId === '1001' ||
+    currentUser.employeeId === '1002' ||
+    currentUser.role === 'Super Admin' ||
+    Boolean(currentUser.permissions?.canManageHR) ||
+    currentUser.department === 'Admin & Finance';
 
   const [previewLogo, setPreviewLogo] = useState<string>(customLogoUrl || '');
   const [urlInput, setUrlInput] = useState<string>(customLogoUrl || '');
@@ -62,19 +67,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       return;
     }
 
-    // Limit to reasonable size for Data URL storage (2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      setLogoErrorMsg(language === 'bn' ? 'ছবির সাইজ ২ মেগাবাইট (2MB)-এর কম হতে হবে।' : 'Image size must be less than 2MB.');
+    if (file.size > 5 * 1024 * 1024) {
+      setLogoErrorMsg(language === 'bn' ? 'ছবির সাইজ ৫ মেগাবাইট (5MB)-এর কম হতে হবে।' : 'Image size must be less than 5MB.');
       return;
     }
 
     setLogoErrorMsg('');
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       const result = reader.result as string;
-      // Optimize & scale down via canvas so it fits smoothly in Cloud Firestore (<100KB)
       const img = new Image();
-      img.onload = () => {
+      img.onload = async () => {
         let width = img.width;
         let height = img.height;
         const maxDim = 400;
@@ -91,19 +94,43 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         canvas.width = width;
         canvas.height = height;
         const ctx = canvas.getContext('2d');
+        let finalLogo = result;
         if (ctx) {
           ctx.drawImage(img, 0, 0, width, height);
-          const optimizedDataUrl = canvas.toDataURL('image/png', 0.9);
-          setPreviewLogo(optimizedDataUrl);
-          setUrlInput('');
-        } else {
-          setPreviewLogo(result);
-          setUrlInput('');
+          finalLogo = canvas.toDataURL('image/png', 0.9);
+        }
+        setPreviewLogo(finalLogo);
+        setUrlInput('');
+
+        // Automatically activate and save immediately
+        setIsSavingLogo(true);
+        try {
+          await updateCustomLogo(finalLogo);
+          setLogoSuccessMsg(
+            language === 'bn'
+              ? 'নতুন লোগো সফলভাবে সক্রিয় এবং ক্লাউডে সংরক্ষিত হয়েছে!'
+              : 'New organization logo activated and saved successfully!'
+          );
+          setTimeout(() => setLogoSuccessMsg(''), 6000);
+        } catch (err) {
+          console.warn('Auto logo save err:', err);
+        } finally {
+          setIsSavingLogo(false);
         }
       };
-      img.onerror = () => {
+      img.onerror = async () => {
         setPreviewLogo(result);
         setUrlInput('');
+        setIsSavingLogo(true);
+        try {
+          await updateCustomLogo(result);
+          setLogoSuccessMsg(language === 'bn' ? 'লোগো সফলভাবে সক্রিয় হয়েছে!' : 'Logo activated successfully!');
+          setTimeout(() => setLogoSuccessMsg(''), 6000);
+        } catch (err) {
+          // ignore
+        } finally {
+          setIsSavingLogo(false);
+        }
       };
       img.src = result;
     };
@@ -121,8 +148,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       setIsSavingLogo(false);
       setLogoSuccessMsg(
         language === 'bn'
-          ? 'প্রতিষ্ঠানের লোগো সফলভাবে ক্লাউড ডেটাবেসে সংরক্ষিত হয়েছে! সকল কম্পিউটার ও ব্যবহারকারীর স্ক্রিনে নতুন লোগো প্রদর্শিত হবে।'
-          : 'Organization logo saved to Google Cloud Firestore successfully! The new logo is now active across all devices and users.'
+          ? 'প্রতিষ্ঠানের লোগো সফলভাবে সংরক্ষিত হয়েছে! সকল স্ক্রিনে নতুন লোগো প্রদর্শিত হচ্ছে।'
+          : 'Organization logo saved successfully! The new logo is now active across all devices and views.'
       );
       setTimeout(() => setLogoSuccessMsg(''), 6000);
     } catch (err: any) {
@@ -272,6 +299,40 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       className="text-xs text-slate-500 hover:text-rose-600 px-3 py-2 cursor-pointer"
                     >
                       {language === 'bn' ? 'বাতিল' : 'Cancel'}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Option 2: Direct Image URL */}
+              <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-3">
+                <div className="flex items-center gap-2 text-slate-800 font-bold text-xs">
+                  <Sparkles className="w-4 h-4 text-emerald-600" />
+                  <span>{language === 'bn' ? '২. অথবা লোগোর ওয়েব লিংক (URL) পেস্ট করুন' : '2. Or Paste Image URL Link'}</span>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    value={urlInput}
+                    onChange={(e) => {
+                      setUrlInput(e.target.value);
+                      if (e.target.value.trim()) {
+                        setPreviewLogo(e.target.value.trim());
+                      }
+                    }}
+                    placeholder="https://example.com/leedo-logo.png"
+                    className="flex-1 px-3 py-2 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-rose-500"
+                  />
+                  {urlInput && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUrlInput('');
+                        setPreviewLogo(customLogoUrl || '');
+                      }}
+                      className="px-3 py-2 text-xs text-slate-500 hover:text-rose-600 cursor-pointer"
+                    >
+                      {language === 'bn' ? 'মুছুন' : 'Clear'}
                     </button>
                   )}
                 </div>
@@ -427,32 +488,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </button>
           )}
         </div>
-
-        {isHrAdmin && (
-          <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-            <div>
-              <h4 className="font-bold text-xs text-slate-900">
-                {language === 'bn' ? 'সিস্টেম ফ্রেশ রিসেট (এইচআর / অ্যাডমিন)' : 'System Fresh Reset (HR / Admin)'}
-              </h4>
-              <p className="text-slate-500">
-                {language === 'bn'
-                  ? 'সকল কেস ডাটা পরিষ্কার করে ভেরিফাইড অফিসিয়াল স্টাফ ও শেল্টার সহ ফ্রেশ সিস্টেমে ফিরুন'
-                  : 'Reset system cases to a fresh operational state with verified staff roster'}
-              </p>
-            </div>
-            <button
-              onClick={() => {
-                if (confirm(language === 'bn' ? 'আপনি কি সিস্টেমের সকল রেকর্ড রিসেট করতে চান?' : 'Reset system to a clean operational state?')) {
-                  resetAllDataToDefault();
-                }
-              }}
-              className="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-              <span>{language === 'bn' ? 'ডাটা রিসেট' : 'Reset Data'}</span>
-            </button>
-          </div>
-        )}
 
         {onLogout && (
           <div className="pt-3 border-t border-slate-100 flex items-center justify-between">

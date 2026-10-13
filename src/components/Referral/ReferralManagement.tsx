@@ -292,11 +292,9 @@ export const ReferralManagement: React.FC = () => {
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     {/* Left: Child Details */}
                     <div className="flex items-start gap-3.5">
-                      <img
-                        src={child.photoUrl || 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&q=80&w=256'}
-                        alt={child.name}
-                        className="w-12 h-12 rounded-xl object-cover ring-1 ring-slate-200 shrink-0"
-                      />
+                      <div className="w-12 h-12 rounded-xl bg-slate-900 text-white font-bold text-sm flex items-center justify-center shrink-0 shadow-2xs font-mono">
+                        {child.name.slice(0, 2).toUpperCase()}
+                      </div>
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="text-[10px] font-mono font-bold bg-slate-900 text-white px-2 py-0.5 rounded">

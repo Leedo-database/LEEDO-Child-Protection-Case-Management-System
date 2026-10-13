@@ -266,40 +266,8 @@ export const RegisterChildModal: React.FC<RegisterChildModalProps> = ({
                 </div>
               </div>
 
-              {/* Photo & Basic Details */}
-              <div className="flex flex-col sm:flex-row gap-5 items-start">
-                <div className="flex flex-col items-center gap-2 w-full sm:w-auto">
-                  <div className="w-28 h-28 rounded-2xl bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden relative group">
-                    {photoPreview ? (
-                      <img src={photoPreview} alt="Child Preview" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="text-center p-2 text-slate-400">
-                        <Camera className="w-8 h-8 mx-auto mb-1 text-slate-300" />
-                        <span className="text-[10px] font-medium block">Rescue Photo</span>
-                      </div>
-                    )}
-                  </div>
-                  <label className="text-xs font-semibold text-[#E31B23] hover:text-rose-700 cursor-pointer flex items-center gap-1">
-                    <Upload className="w-3.5 h-3.5" />
-                    <span>Upload Photo</span>
-                    <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
-                  </label>
-                  {photoPreview && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setPhotoPreview(null);
-                        setPhotoUrl('');
-                      }}
-                      className="text-[10px] text-slate-500 hover:text-rose-600 underline cursor-pointer"
-                    >
-                      Remove Photo
-                    </button>
-                  )}
-                </div>
-
-                {/* Basic Details Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 flex-1 w-full">
+              {/* Basic Details Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 w-full">
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">
                       Child Name <span className="text-rose-600">*</span>
@@ -360,7 +328,6 @@ export const RegisterChildModal: React.FC<RegisterChildModalProps> = ({
                     </div>
                   </div>
                 </div>
-              </div>
 
               {/* DOB Toggle */}
               <div className="border-t border-slate-100 pt-3">
