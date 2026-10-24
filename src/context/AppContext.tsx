@@ -459,119 +459,68 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
       handleFirestoreError(error, OperationType.GET, 'system/settings');
     });
 
-    // 2. Children collection listener
+    // 2. Children collection listener - authoritative real-time cloud sync
     const unsubChildren = onSnapshot(collection(db, 'children'), (snapshot) => {
-      if (!snapshot.empty) {
-        const firestoreChildren: Child[] = [];
-        snapshot.forEach((d) => {
-          const c = d.data() as Child;
-          if (c && c.id && !DEMO_CHILD_IDS.has(c.id) && !DEMO_CHILD_NAMES.has(c.name)) {
-            firestoreChildren.push(c);
-          }
-        });
-        if (firestoreChildren.length > 0) {
-          setChildrenList((prev) => {
-            const map = new Map<string, Child>();
-            firestoreChildren.forEach(c => map.set(c.id, c));
-            prev.forEach(c => {
-              if (!map.has(c.id) && !DEMO_CHILD_IDS.has(c.id)) {
-                map.set(c.id, c);
-                // Back up local additions to cloud
-                setDoc(doc(db, 'children', c.id), c, { merge: true }).catch(() => {});
-              }
-            });
-            const merged = Array.from(map.values()).sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
-            localStorage.setItem(STORAGE_KEYS.CHILDREN, JSON.stringify(merged));
-            return merged;
-          });
+      const firestoreChildren: Child[] = [];
+      snapshot.forEach((d) => {
+        const c = d.data() as Child;
+        if (c && c.id && !DEMO_CHILD_IDS.has(c.id) && !DEMO_CHILD_NAMES.has(c.name)) {
+          firestoreChildren.push(c);
         }
-      }
+      });
+      firestoreChildren.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+      setChildrenList(firestoreChildren);
+      localStorage.setItem(STORAGE_KEYS.CHILDREN, JSON.stringify(firestoreChildren));
     }, (error) => {
       handleFirestoreError(error, OperationType.GET, 'children');
     });
 
-    // 3. SUS Sessions collection listener
+    // 3. SUS Sessions collection listener - authoritative cloud sync
     const unsubSUS = onSnapshot(collection(db, 'susSessions'), (snapshot) => {
-      if (!snapshot.empty) {
-        const firestoreSessions: SUSSession[] = [];
-        snapshot.forEach((d) => {
-          const s = d.data() as SUSSession;
-          if (s && s.id && !DEMO_SUS_IDS.has(s.id)) {
-            firestoreSessions.push(s);
-          }
-        });
-        if (firestoreSessions.length > 0) {
-          setSusSessions((prev) => {
-            const map = new Map<string, SUSSession>();
-            firestoreSessions.forEach(s => map.set(s.id, s));
-            prev.forEach(s => {
-              if (!map.has(s.id) && !DEMO_SUS_IDS.has(s.id)) {
-                map.set(s.id, s);
-                setDoc(doc(db, 'susSessions', s.id), s, { merge: true }).catch(() => {});
-              }
-            });
-            const merged = Array.from(map.values()).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-            localStorage.setItem(STORAGE_KEYS.SUS_SESSIONS, JSON.stringify(merged));
-            return merged;
-          });
+      const firestoreSessions: SUSSession[] = [];
+      snapshot.forEach((d) => {
+        const s = d.data() as SUSSession;
+        if (s && s.id && !DEMO_SUS_IDS.has(s.id)) {
+          firestoreSessions.push(s);
         }
-      }
+      });
+      firestoreSessions.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+      setSusSessions(firestoreSessions);
+      localStorage.setItem(STORAGE_KEYS.SUS_SESSIONS, JSON.stringify(firestoreSessions));
     }, (error) => {
       handleFirestoreError(error, OperationType.GET, 'susSessions');
     });
 
-    // 4. Vocational Students collection listener
+    // 4. Vocational Students collection listener - authoritative cloud sync
     const unsubVTC = onSnapshot(collection(db, 'vocationalStudents'), (snapshot) => {
-      if (!snapshot.empty) {
-        const firestoreStudents: VTCStudent[] = [];
-        snapshot.forEach((d) => {
-          const st = d.data() as VTCStudent;
-          if (st && st.id && !DEMO_VTC_IDS.has(st.id)) {
-            firestoreStudents.push(st);
-          }
-        });
-        if (firestoreStudents.length > 0) {
-          setVtcStudents((prev) => {
-            const map = new Map<string, VTCStudent>();
-            firestoreStudents.forEach(st => map.set(st.id, st));
-            prev.forEach(st => {
-              if (!map.has(st.id) && !DEMO_VTC_IDS.has(st.id)) {
-                map.set(st.id, st);
-                setDoc(doc(db, 'vocationalStudents', st.id), st, { merge: true }).catch(() => {});
-              }
-            });
-            const merged = Array.from(map.values());
-            localStorage.setItem(STORAGE_KEYS.VTC_STUDENTS, JSON.stringify(merged));
-            return merged;
-          });
+      const firestoreStudents: VTCStudent[] = [];
+      snapshot.forEach((d) => {
+        const st = d.data() as VTCStudent;
+        if (st && st.id && !DEMO_VTC_IDS.has(st.id)) {
+          firestoreStudents.push(st);
         }
-      }
+      });
+      setVtcStudents(firestoreStudents);
+      localStorage.setItem(STORAGE_KEYS.VTC_STUDENTS, JSON.stringify(firestoreStudents));
     }, (error) => {
       handleFirestoreError(error, OperationType.GET, 'vocationalStudents');
     });
 
-    // 5. Users collection listener
+    // 5. Users collection listener - authoritative cloud sync with default official roster
     const unsubUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
-      if (!snapshot.empty) {
-        const firestoreUsers: User[] = [];
-        snapshot.forEach((d) => {
-          const u = d.data() as User;
-          if (u && u.id) {
-            firestoreUsers.push(u);
-          }
-        });
-        if (firestoreUsers.length > 0) {
-          setUsersList((prev) => {
-            const map = new Map<string, User>();
-            OFFICIAL_LEEDO_USERS.forEach(u => map.set(u.id, u));
-            prev.forEach(u => map.set(u.id, u));
-            firestoreUsers.forEach(u => map.set(u.id, u));
-            const merged = Array.from(map.values());
-            localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(merged));
-            return merged;
-          });
+      const firestoreUsers: User[] = [];
+      snapshot.forEach((d) => {
+        const u = d.data() as User;
+        if (u && u.id) {
+          firestoreUsers.push(u);
         }
-      }
+      });
+      const map = new Map<string, User>();
+      OFFICIAL_LEEDO_USERS.forEach(u => map.set(u.id, u));
+      firestoreUsers.forEach(u => map.set(u.id, u));
+      const merged = Array.from(map.values());
+      setUsersList(merged);
+      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(merged));
     }, (error) => {
       console.warn('Users listener:', error);
     });
@@ -760,6 +709,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
       details,
     };
     setAuditLogs((prev) => [newEntry, ...prev]);
+    setDoc(doc(db, 'auditLogs', newEntry.id), newEntry, { merge: true }).catch(() => {});
   };
 
   // Generate unique sequential Child ID e.g. LEEDO-2026-0008

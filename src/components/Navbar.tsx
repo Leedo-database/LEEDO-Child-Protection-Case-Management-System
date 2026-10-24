@@ -264,16 +264,19 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
           </button>
 
-          {/* Global Language Switcher (Bangla / English) */}
-          <button
-            onClick={toggleLanguage}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-lg border border-slate-200 transition-colors cursor-pointer"
-            title={language === 'bn' ? 'Switch to English' : 'বাংলা ভাষায় পরিবর্তন করুন'}
-            aria-label="Toggle language"
+          {/* Real-time Firebase Cloud Auto-Sync Active Badge */}
+          <div
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 text-emerald-800 text-xs font-bold rounded-lg border border-emerald-200 shadow-2xs"
+            title={language === 'bn' ? 'ফায়ারবেস ক্লাউড অটো-সিঙ্ক সক্রিয়: সব ডেটা সরাসরি ক্লাউড ডাটাবেজে রিয়েল-টাইমে সেভ ও আপডেট হচ্ছে' : 'Firebase Cloud Auto-Sync Active: All data persists directly to Google Cloud Firestore with real-time sync across devices'}
           >
-            <Languages className="w-3.5 h-3.5 text-[#E31B23]" />
-            <span>{language === 'bn' ? 'English (EN)' : 'বাংলা (BN)'}</span>
-          </button>
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span className="text-[11px] font-bold text-emerald-800">
+              {language === 'bn' ? 'ক্লাউড সিঙ্ক' : 'Cloud Sync'}
+            </span>
+          </div>
 
           {/* System Manual / Field SOP button */}
           {onOpenManualModal && (

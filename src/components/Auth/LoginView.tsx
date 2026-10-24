@@ -1,44 +1,37 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   ShieldCheck, 
   Lock, 
-  Mail, 
   Shield, 
   AlertTriangle, 
   KeyRound, 
   CheckCircle2, 
   UserX, 
-  RefreshCw, 
   ArrowRight, 
-  Building2, 
-  MapPin, 
   Search, 
   Globe, 
   LogIn,
   UserPlus,
-  HelpCircle,
-  Phone,
-  Eye,
+  Eye, 
   EyeOff,
-  Send
+  Cloud,
+  Database,
+  Check
 } from 'lucide-react';
 import { LeedoLogo } from '../LeedoLogo';
-import { useApp, MASTER_HR_EMAIL } from '../../context/AppContext';
+import { useApp } from '../../context/AppContext';
 import { User, UserRole } from '../../types';
 
 interface LoginViewProps {
   onLoginSuccess: () => void;
 }
 
-type AuthMode = 'login' | 'otp' | 'forgot_password' | 'request_id' | 'first_login_set_password';
+type AuthMode = 'login' | 'forgot_password' | 'request_id' | 'first_login_set_password';
 
 export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
   const { 
     users, 
     setCurrentUser, 
-    generateMasterOtp, 
-    verifyMasterOtp, 
-    activeMasterOtp,
     language,
     toggleLanguage,
     hasDeletePermission,
@@ -48,11 +41,11 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
 
   const [authMode, setAuthMode] = useState<AuthMode>('login');
   
-  // Login credentials
-  const [identifier, setIdentifier] = useState('EMP-002'); // Can be Employee ID or Email
+  // Login credentials - ONLY Employee ID & Password required (no email, no 2FA OTP)
+  const [identifier, setIdentifier] = useState('1001'); // Default to first employee ID
   const [password, setPassword] = useState('123456');
   const [showPassword, setShowPassword] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<User | null>(() => users[1] || users[0] || null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(() => users[0] || null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showStaffRoster, setShowStaffRoster] = useState(false);
 
@@ -63,20 +56,16 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
   const [firstLoginShowPassword, setFirstLoginShowPassword] = useState(false);
   const [firstLoginError, setFirstLoginError] = useState('');
   
-  // 2FA / Verification code state
-  const [otpCode, setOtpCode] = useState('');
-  const [otpError, setOtpError] = useState('');
+  // Status feedback
   const [generalError, setGeneralError] = useState('');
   const [successNotice, setSuccessNotice] = useState('');
-  const [resendCooldown, setResendCooldown] = useState(60);
-  const [dispatchedOtp, setDispatchedOtp] = useState<string | null>(null);
 
-  // Forgot password form state
-  const [resetIdentifier, setResetIdentifier] = useState('');
-  const [resetStep, setResetStep] = useState<'input' | 'verify' | 'new_password'>('input');
-  const [resetOtpCode, setResetOtpCode] = useState('');
+  // Direct Password Reset form state (No email or 2FA OTP required)
+  const [resetEmployeeId, setResetEmployeeId] = useState('');
+  const [matchedResetUser, setMatchedResetUser] = useState<User | null>(null);
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [showResetPassword, setShowResetPassword] = useState(false);
 
   // Request New ID form state
   const [reqName, setReqName] = useState('');
@@ -86,15 +75,6 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
   const [reqDesignation, setReqDesignation] = useState('Community Mobilizer');
   const [reqAssignedCenter, setReqAssignedCenter] = useState('Airport');
   const [reqSubmittedTicket, setReqSubmittedTicket] = useState<{ id: string; name: string } | null>(null);
-
-  // Timer for OTP countdown
-  useEffect(() => {
-    let timer: any;
-    if ((authMode === 'otp' || resetStep === 'verify') && resendCooldown > 0) {
-      timer = setInterval(() => setResendCooldown(prev => prev - 1), 1000);
-    }
-    return () => clearInterval(timer);
-  }, [authMode, resetStep, resendCooldown]);
 
   const handleSelectStaff = (u: User) => {
     setSelectedUser(u);
@@ -132,19 +112,27 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
     setGeneralError('');
 
     const cleanInput = identifier.trim().toLowerCase();
+    const cleanDigits = cleanInput.replace(/\D/g, '');
     
-    // Check user in database by Employee ID, ID, or Email
-    const matched = users.find(u => 
-      u.email.toLowerCase() === cleanInput ||
-      u.id.toLowerCase() === cleanInput ||
-      (u.employeeId && u.employeeId.toLowerCase() === cleanInput)
-    ) || selectedUser;
+    // Check user in database by Employee ID (e.g. 1001, 1002, 1057) or ID
+    const matched = users.find(u => {
+      const uEmp = (u.employeeId || '').toLowerCase();
+      const uId = u.id.toLowerCase();
+      const uDigits = (u.employeeId || '').replace(/\D/g, '');
+      return (
+        uEmp === cleanInput ||
+        uId === cleanInput ||
+        (cleanDigits.length > 0 && uDigits === cleanDigits) ||
+        (cleanInput.startsWith('emp-') && uId === cleanInput) ||
+        (`emp-${cleanInput}` === uId)
+      );
+    }) || (selectedUser && (selectedUser.employeeId?.toLowerCase() === cleanInput || selectedUser.id.toLowerCase() === cleanInput) ? selectedUser : null);
     
     if (!matched) {
       setGeneralError(
         language === 'bn'
-          ? 'নিবন্ধিত অ্যাকাউন্ট বা আইডি পাওয়া যায়নি: এই আইডি/ইমেইলটি LEEDO ডাটাবেজে অন্তর্ভুক্ত নেই।'
-          : 'Unregistered ID or Email: Not found in official LEEDO personnel database.'
+          ? 'নিবন্ধিত এমপ্লয়ি আইডি পাওয়া যায়নি: এই আইডিটি LEEDO ডাটাবেজে অন্তর্ভুক্ত নেই। সঠিক এমপ্লয়ি আইডি (যেমন: 1001, 1002, 1057) লিখুন।'
+          : 'Employee ID not found: Please enter a valid registered Employee ID (e.g. 1001, 1002, 1057).'
       );
       return;
     }
@@ -175,12 +163,12 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
       setGeneralError(
         language === 'bn'
           ? 'ভুল পাসওয়ার্ড! আপনার নির্ধারিত গোপন পাসওয়ার্ডটি সঠিকভাবে লিখুন।'
-          : 'Incorrect password! Please enter your personal custom password.'
+          : 'Incorrect password! Please enter your personal password.'
       );
       return;
     }
 
-    // Password verified
+    // Password verified - login directly
     setSelectedUser(matched);
     setCurrentUser(matched);
     localStorage.setItem('leedo_session_logged_in', 'true');
@@ -223,106 +211,63 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
     onLoginSuccess();
   };
 
-  const handleSend2FA = () => {
-    if (!selectedUser) return;
-    const code = generateMasterOtp(selectedUser.email);
-    setDispatchedOtp(code);
-    setAuthMode('otp');
-    setOtpCode('');
-    setOtpError('');
-    setResendCooldown(60);
-  };
-
-  const handleVerifyOtp = (e: React.FormEvent) => {
-    e.preventDefault();
-    setOtpError('');
-
-    if (!otpCode || otpCode.trim().length !== 6) {
-      setOtpError(
-        language === 'bn'
-          ? 'অনুগ্রহ করে সঠিক ৬-সংখ্যার ভেরিফিকেশন কোড প্রদান করুন।'
-          : 'Please enter a valid 6-digit verification code.'
-      );
-      return;
-    }
-
-    const isValid = verifyMasterOtp(otpCode);
-    if (!isValid && otpCode !== dispatchedOtp && otpCode !== '123456') {
-      setOtpError(
-        language === 'bn'
-          ? 'ভুল ভেরিফিকেশন কোড। ইমেইলে পাঠানো কোডটি পুনরায় পরীক্ষা করুন।'
-          : 'Invalid verification code. Please check the code sent to your email.'
-      );
-      return;
-    }
-
-    if (selectedUser) {
-      setCurrentUser(selectedUser);
-      localStorage.setItem('leedo_session_logged_in', 'true');
-      onLoginSuccess();
-    }
-  };
-
-  // Forgot password flows
-  const handleRequestPasswordReset = (e: React.FormEvent) => {
+  // Direct Forgot Password flow - No email or 2FA OTP
+  const handleFindUserForReset = (e: React.FormEvent) => {
     e.preventDefault();
     setGeneralError('');
-    const clean = resetIdentifier.trim().toLowerCase();
-    const matched = users.find(u => 
-      u.email.toLowerCase() === clean || 
-      u.id.toLowerCase() === clean ||
-      (u.employeeId && u.employeeId.toLowerCase() === clean)
-    );
+    const clean = resetEmployeeId.trim().toLowerCase();
+    const cleanDigits = clean.replace(/\D/g, '');
+    
+    const matched = users.find(u => {
+      const uEmp = (u.employeeId || '').toLowerCase();
+      const uId = u.id.toLowerCase();
+      const uDigits = (u.employeeId || '').replace(/\D/g, '');
+      return (
+        uEmp === clean ||
+        uId === clean ||
+        (cleanDigits.length > 0 && uDigits === cleanDigits)
+      );
+    });
 
     if (!matched) {
       setGeneralError(
         language === 'bn'
-          ? 'এই আইডি বা ইমেইল দিয়ে কোনো কর্মী প্রোফাইল পাওয়া যায়নি।'
-          : 'No registered personnel account found with this ID or Email.'
+          ? 'এই এমপ্লয়ি আইডি দিয়ে কোনো কর্মকর্তা পাওয়া যায়নি।'
+          : 'No personnel account found with this Employee ID.'
       );
       return;
     }
 
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    setDispatchedOtp(code);
-    setResetStep('verify');
-    setResendCooldown(60);
-    setSuccessNotice(
-      language === 'bn'
-        ? `পাসওয়ার্ড রিসেট কোড পাঠানো হয়েছে: ${matched.email} ও কেন্দ্রীয় এইচআর (${MASTER_HR_EMAIL})`
-        : `Password reset code sent to ${matched.email} and central HR (${MASTER_HR_EMAIL})`
-    );
+    setMatchedResetUser(matched);
   };
 
-  const handleVerifyResetOtp = (e: React.FormEvent) => {
+  const handleSaveNewPasswordDirect = (e: React.FormEvent) => {
     e.preventDefault();
-    if (resetOtpCode !== dispatchedOtp && resetOtpCode !== '123456') {
-      setOtpError(language === 'bn' ? 'ভুল কোড। অনুগ্রহ করে পুনরায় চেষ্টা করুন।' : 'Invalid reset code. Please try again.');
-      return;
-    }
-    setOtpError('');
-    setResetStep('new_password');
-  };
+    setGeneralError('');
 
-  const handleSaveNewPassword = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newPassword.length < 6) {
-      setGeneralError(language === 'bn' ? 'পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।' : 'Password must be at least 6 characters.');
+    if (!newPassword || newPassword.length < 4) {
+      setGeneralError(language === 'bn' ? 'পাসওয়ার্ড কমপক্ষে ৪ অক্ষরের হতে হবে।' : 'Password must be at least 4 characters.');
       return;
     }
     if (newPassword !== confirmNewPassword) {
-      setGeneralError(language === 'bn' ? 'উভয় পাসওয়ার্ড মেলেনি।' : 'Passwords do not match.');
+      setGeneralError(language === 'bn' ? 'উভয় পাসওয়ার্ডের মিল মেলেনি।' : 'Passwords do not match.');
       return;
     }
 
+    if (!matchedResetUser) return;
+
+    changeUserPassword(matchedResetUser.id, newPassword);
+
     setSuccessNotice(
       language === 'bn'
-        ? 'পাসওয়ার্ড সফলভাবে পরিবর্তন করা হয়েছে! নতুন পাসওয়ার্ড দিয়ে লগইন করুন।'
-        : 'Password updated successfully! Please log in with your new credentials.'
+        ? `পাসওয়ার্ড সফলভাবে পরিবর্তন করা হয়েছে! নতুন পাসওয়ার্ড দিয়ে লগইন করুন (আইডি: ${matchedResetUser.employeeId || matchedResetUser.id})`
+        : `Password updated successfully! Please log in with Employee ID: ${matchedResetUser.employeeId || matchedResetUser.id}`
     );
+    setIdentifier(matchedResetUser.employeeId || matchedResetUser.id);
+    setPassword(newPassword);
     setAuthMode('login');
-    setResetStep('input');
-    setResetIdentifier('');
+    setMatchedResetUser(null);
+    setResetEmployeeId('');
     setNewPassword('');
     setConfirmNewPassword('');
   };
@@ -332,7 +277,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
     e.preventDefault();
     if (!reqName.trim() || !reqPhone.trim()) return;
 
-    const newGeneratedId = `EMP-${String(users.length + 1).padStart(3, '0')}`;
+    const newGeneratedId = String(1000 + users.length + 1);
     const newStaffData: Omit<User, 'id'> = {
       employeeId: newGeneratedId,
       name: reqName.trim(),
@@ -356,8 +301,8 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
     setReqSubmittedTicket({ id: newGeneratedId, name: reqName.trim() });
     setSuccessNotice(
       language === 'bn'
-        ? `নতুন আইডি অনুমোদিত ও তৈরি হয়েছে! স্টাফ আইডি: ${newGeneratedId}`
-        : `New Staff ID successfully generated! Staff ID: ${newGeneratedId}`
+        ? `নতুন আইডি অনুমোদিত ও তৈরি হয়েছে! স্টাফ এমপ্লয়ি আইডি: ${newGeneratedId}`
+        : `New Staff ID successfully generated! Employee ID: ${newGeneratedId}`
     );
   };
 
@@ -367,7 +312,6 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
     return (
       u.name.toLowerCase().includes(q) ||
       u.role.toLowerCase().includes(q) ||
-      u.email.toLowerCase().includes(q) ||
       (u.employeeId && u.employeeId.toLowerCase().includes(q)) ||
       (u.assignedShelter && u.assignedShelter.toLowerCase().includes(q))
     );
@@ -380,12 +324,16 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
       <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-emerald-600/10 rounded-full blur-3xl pointer-events-none" />
 
       <div className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-100 p-6 sm:p-8 relative z-10">
-        {/* Top bar with Language Switcher */}
-        <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
-          <div className="flex items-center gap-2">
-            <span className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-              {language === 'bn' ? 'লিডো সিকিউর অথেনটিকেশন পোর্টাল' : 'LEEDO Secure Authentication Portal'}
+        {/* Top bar with Language Switcher and Cloud Auto-Sync Status */}
+        <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100 gap-2">
+          {/* Real-time Cloud Auto-Sync Notice */}
+          <div className="flex items-center gap-2 px-2.5 py-1 bg-emerald-50 border border-emerald-200 rounded-full">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span className="text-[11px] font-bold text-emerald-800">
+              {language === 'bn' ? 'ফায়ারবেস ক্লাউড অটো-সিঙ্ক সক্রিয়' : 'Firebase Cloud Auto-Sync Active'}
             </span>
           </div>
 
@@ -409,8 +357,8 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
           </h1>
           <p className="text-xs text-slate-500 mt-1 max-w-lg mx-auto">
             {language === 'bn' 
-              ? 'অথোরাইজড কর্মী লগইন • রোল ভিত্তিক পারমিশন ও এক্সেস কন্ট্রোল • রিয়েল-টাইম ডাটা সুরক্ষাকরণ'
-              : 'Authorized Personnel Portal • Role-Based Location Segregation • Legal Chain of Custody'}
+              ? 'অথোরাইজড কর্মী লগইন • এমপ্লয়ি আইডি ও পাসওয়ার্ড প্রবেশাধিকার • রিয়েল-টাইম ক্লাউড সংরক্ষণ'
+              : 'Authorized Personnel Portal • Employee ID Access • Real-time Cloud Persistence'}
           </p>
         </div>
 
@@ -429,13 +377,14 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
           </div>
         )}
 
-        {/* MODE 1: STANDARD CREDENTIAL LOGIN */}
+        {/* MODE 1: STANDARD CREDENTIAL LOGIN (EMPLOYEE ID ONLY, NO EMAIL, NO OTP) */}
         {authMode === 'login' && (
           <div className="space-y-4">
             {/* Quick Staff Selection Roster (Toggle Bar) */}
             <div className="flex items-center justify-between pb-1">
-              <span className="text-xs font-semibold text-slate-700">
-                {language === 'bn' ? 'স্টাফ লগইন পোর্টাল' : 'Staff Authentication'}
+              <span className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                <Shield className="w-3.5 h-3.5 text-rose-600" />
+                {language === 'bn' ? 'স্টাফ লগইন (এমপ্লয়ি আইডি ও পাসওয়ার্ড)' : 'Staff Login (Employee ID & Password)'}
               </span>
               <button
                 type="button"
@@ -459,7 +408,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search..."
+                      placeholder="Search ID/Name..."
                       className="w-full pl-6 pr-2 py-1 text-[11px] bg-white border border-slate-200 rounded-lg"
                     />
                   </div>
@@ -468,7 +417,6 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
                   {filteredUsersList.map((u) => {
                     const isSelected = selectedUser?.id === u.id;
-                    const canDelete = hasDeletePermission(u);
                     const isResigned = u.status === 'Resigned / Terminated';
 
                     return (
@@ -512,35 +460,41 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
               </div>
             )}
 
-            {/* Login Form */}
+            {/* Login Form: Employee ID + Password ONLY */}
             <form onSubmit={handleInitiateLogin} className="space-y-3.5">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  {language === 'bn' ? 'স্টাফ আইডি বা ইমেইল অ্যাড্রেস *' : 'Employee ID or Official Email *'}
+                  {language === 'bn' ? 'স্টাফ / এমপ্লয়ি আইডি (Employee ID) *' : 'Staff Employee ID *'}
                 </label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                  <Shield className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                   <input
                     type="text"
                     required
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
-                    placeholder="e.g. EMP-002 or helpstreetchildren4survive@gmail.com"
-                    className="w-full pl-9 pr-3.5 py-2.5 text-xs sm:text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500 font-mono"
+                    placeholder="e.g. 1001, 1002, 1057"
+                    className="w-full pl-9 pr-3.5 py-2.5 text-xs sm:text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500 font-mono font-bold"
                   />
                 </div>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  {language === 'bn'
+                    ? 'কোনো ইমেইল বা ওটিপি কোড লাগবে না — শুধুমাত্র আপনার এমপ্লয়ি আইডি ও গোপন পাসওয়ার্ড দিন।'
+                    : 'No email or OTP code required — sign in directly with Employee ID and password.'}
+                </p>
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="block text-xs font-semibold text-slate-700">
-                    {language === 'bn' ? 'পাসওয়ার্ড *' : 'Password *'}
+                    {language === 'bn' ? 'পাসওয়ার্ড (Password) *' : 'Password *'}
                   </label>
                   <button
                     type="button"
                     onClick={() => {
                       setAuthMode('forgot_password');
-                      setResetStep('input');
+                      setResetEmployeeId(identifier);
+                      setMatchedResetUser(null);
                       setGeneralError('');
                       setSuccessNotice('');
                     }}
@@ -569,22 +523,14 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-2 pt-2">
+              {/* Single Clear Login Button */}
+              <div className="pt-2">
                 <button
                   type="submit"
-                  className="flex-1 py-3 bg-[#E31B23] hover:bg-[#c9151d] text-white rounded-xl text-xs sm:text-sm font-bold shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full py-3.5 bg-[#E31B23] hover:bg-[#c9151d] text-white rounded-xl text-xs sm:text-sm font-bold shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <LogIn className="w-4 h-4" />
-                  <span>{language === 'bn' ? 'সরাসরি সিস্টেমে প্রবেশ করুন' : 'Sign In with ID & Password'}</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleSend2FA}
-                  className="px-4 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs sm:text-sm font-bold shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <KeyRound className="w-3.5 h-3.5 text-amber-400" />
-                  <span>{language === 'bn' ? 'ইমেইল কোড ভেরিফিকেশন' : '2FA OTP Flow'}</span>
+                  <span>{language === 'bn' ? 'সরাসরি সিস্টেমে প্রবেশ করুন' : 'Sign In with Employee ID'}</span>
                 </button>
               </div>
 
@@ -640,7 +586,6 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
                 <div className="text-rose-700 font-medium text-[11px] truncate">
                   {pendingFirstLoginUser.designation || pendingFirstLoginUser.role}
                 </div>
-                <div className="text-slate-400 text-[10px] truncate">{pendingFirstLoginUser.email}</div>
               </div>
             </div>
 
@@ -718,113 +663,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
           </div>
         )}
 
-        {/* MODE 2: 2FA MASTER OTP VERIFICATION */}
-        {authMode === 'otp' && (
-          <div>
-            <div className="text-center mb-5">
-              <div className="w-12 h-12 rounded-full bg-rose-100 text-[#E31B23] mx-auto flex items-center justify-center mb-2">
-                <KeyRound className="w-6 h-6" />
-              </div>
-              <h2 className="text-base font-bold text-slate-900">
-                {language === 'bn' ? 'মাস্টার ভেরিফিকেশন কোড লিখুন' : 'Enter Master Verification Code'}
-              </h2>
-              <p className="text-xs text-slate-500 mt-1">
-                {language === 'bn' ? 'ইউজার:' : 'Authenticating:'} <strong>{selectedUser?.name}</strong> ({selectedUser?.role})
-              </p>
-              <p className="text-[11px] text-slate-400">
-                {language === 'bn' 
-                  ? `একটি ৬-সংখ্যার সিকিউরিটি কোড কেন্দ্রীয় ইমেইল ${MASTER_HR_EMAIL}-এ পাঠানো হয়েছে`
-                  : `A 6-digit access code was dispatched to ${MASTER_HR_EMAIL}`}
-              </p>
-            </div>
-
-            {/* Simulated Live Master Email Inbox Notification Banner */}
-            <div className="mb-5 bg-amber-50 border border-amber-300 rounded-2xl p-3.5 shadow-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-amber-900 uppercase tracking-wide flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5 text-amber-700" />
-                  {language === 'bn' ? `মাস্টার ইমেইল ইনবক্স (${MASTER_HR_EMAIL})` : `Master Email Simulation (${MASTER_HR_EMAIL})`}
-                </span>
-                <span className="text-[10px] bg-amber-200 text-amber-800 font-bold px-1.5 py-0.5 rounded">
-                  {language === 'bn' ? 'নতুন কোড প্রাপ্ত হয়েছে' : 'New Code Received'}
-                </span>
-              </div>
-              <div className="mt-2 flex items-center justify-between bg-white border border-amber-200 rounded-xl p-2.5">
-                <span className="text-lg font-mono font-black tracking-widest text-slate-900">
-                  {dispatchedOtp || activeMasterOtp || '742918'}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setOtpCode(dispatchedOtp || activeMasterOtp || '742918')}
-                  className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer"
-                >
-                  {language === 'bn' ? 'কোড বসান' : 'Auto-fill Code'}
-                </button>
-              </div>
-            </div>
-
-            <form onSubmit={handleVerifyOtp} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1 text-center">
-                  {language === 'bn' ? '৬-সংখ্যার কোড দিন' : '6-Digit Master OTP Code'}
-                </label>
-                <input
-                  type="text"
-                  maxLength={6}
-                  value={otpCode}
-                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
-                  placeholder="• • • • • •"
-                  className="w-full text-center text-2xl tracking-widest font-mono font-bold py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500 font-mono"
-                  autoFocus
-                />
-                {otpError && (
-                  <p className="text-xs text-rose-600 font-medium mt-1.5 text-center">
-                    {otpError}
-                  </p>
-                )}
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-3 bg-[#E31B23] hover:bg-[#c9151d] text-white rounded-xl text-sm font-bold shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                <span>{language === 'bn' ? 'যাচাই করুন ও সিস্টেমে প্রবেশ করুন' : 'Verify & Access System'}</span>
-              </button>
-
-              <div className="flex items-center justify-between text-xs text-slate-500 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setAuthMode('login')}
-                  className="hover:text-slate-800 underline font-medium cursor-pointer"
-                >
-                  &larr; {language === 'bn' ? 'লগইন পেজে ফিরুন' : 'Back to login'}
-                </button>
-
-                <button
-                  type="button"
-                  disabled={resendCooldown > 0}
-                  onClick={() => {
-                    if (selectedUser && resendCooldown === 0) {
-                      const code = generateMasterOtp(selectedUser.email);
-                      setDispatchedOtp(code);
-                      setResendCooldown(60);
-                    }
-                  }}
-                  className={`font-semibold cursor-pointer ${
-                    resendCooldown > 0 ? 'text-slate-400' : 'text-rose-600 hover:underline'
-                  }`}
-                >
-                  {resendCooldown > 0 
-                    ? (language === 'bn' ? `${resendCooldown}s পর কোড পাঠান` : `Resend Code in ${resendCooldown}s`)
-                    : (language === 'bn' ? 'পুনরায় কোড পাঠান' : 'Resend Code')}
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
-
-        {/* MODE 3: FORGOT PASSWORD RESET REQUEST */}
+        {/* MODE 2: DIRECT FORGOT PASSWORD RESET (NO EMAIL / NO OTP REQUIRED) */}
         {authMode === 'forgot_password' && (
           <div className="space-y-4">
             <div className="text-center mb-4">
@@ -832,35 +671,44 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
                 <KeyRound className="w-5 h-5" />
               </div>
               <h2 className="text-base font-bold text-slate-900">
-                {language === 'bn' ? 'পাসওয়ার্ড রিসেট রিকোয়েস্ট' : 'Password Reset Request'}
+                {language === 'bn' ? 'পাসওয়ার্ড পরিবর্তন ও রিসেট' : 'Direct Password Reset'}
               </h2>
               <p className="text-xs text-slate-500">
                 {language === 'bn'
-                  ? 'আপনার স্টাফ আইডি বা ইমেইল দিলে কেন্দ্রীয় ইমেইল সিস্টেমে সিকিউরিটি ভেরিফিকেশন কোড পাঠানো হবে।'
-                  : 'Enter your Staff ID or Email to receive a 6-digit verification code.'}
+                  ? 'আপনার এমপ্লয়ি আইডি প্রদান করে সরাসরি নতুন পাসওয়ার্ড নির্ধারণ করুন।'
+                  : 'Enter your Employee ID to update your password directly.'}
               </p>
             </div>
 
-            {resetStep === 'input' && (
-              <form onSubmit={handleRequestPasswordReset} className="space-y-3 text-xs">
+            {!matchedResetUser ? (
+              <form onSubmit={handleFindUserForReset} className="space-y-3 text-xs">
                 <div>
                   <label className="block font-semibold text-slate-700 mb-1">
-                    {language === 'bn' ? 'আপনার স্টাফ আইডি বা ইমেইল *' : 'Staff ID or Official Email *'}
+                    {language === 'bn' ? 'আপনার এমপ্লয়ি আইডি (Employee ID) *' : 'Your Employee ID *'}
                   </label>
                   <input
                     type="text"
                     required
-                    value={resetIdentifier}
-                    onChange={(e) => setResetIdentifier(e.target.value)}
-                    placeholder="e.g. EMP-002 or email address"
-                    className="w-full px-3 py-2.5 border border-slate-300 rounded-xl font-mono text-sm"
+                    value={resetEmployeeId}
+                    onChange={(e) => setResetEmployeeId(e.target.value)}
+                    placeholder="e.g. 1001, 1002, 1057"
+                    className="w-full px-3 py-2.5 border border-slate-300 rounded-xl font-mono text-sm font-bold"
                   />
+                </div>
+
+                <div className="p-3 bg-slate-50 rounded-xl text-[11px] text-slate-600 leading-relaxed border border-slate-200">
+                  {language === 'bn'
+                    ? 'তথ্য: অথবা আপনি কেন্দ্রীয় এইচআর ও অ্যাডমিন (মুর্শিদা আক্তার কান্তা - 1002) এর কাছে যোগাযোগ করে পাসওয়ার্ড ডিফল্টে (123456) রিসেট করাতে পারেন।'
+                    : 'Tip: You can also contact HR / Admin (Murshida Akhter Kanta - 1002) to reset your password to default (123456).'}
                 </div>
 
                 <div className="flex items-center gap-2 pt-2">
                   <button
                     type="button"
-                    onClick={() => setAuthMode('login')}
+                    onClick={() => {
+                      setAuthMode('login');
+                      setGeneralError('');
+                    }}
                     className="flex-1 py-2.5 border border-slate-200 text-slate-600 rounded-xl font-semibold cursor-pointer"
                   >
                     {language === 'bn' ? 'বাতিল' : 'Cancel'}
@@ -869,98 +717,83 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
                     type="submit"
                     className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold flex items-center justify-center gap-1.5 cursor-pointer"
                   >
-                    <Send className="w-3.5 h-3.5" />
-                    <span>{language === 'bn' ? 'ইমেইলে কোড পাঠান' : 'Send Code to Email'}</span>
+                    <span>{language === 'bn' ? 'আইডি যাচাই করুন' : 'Verify ID'}</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </form>
-            )}
-
-            {resetStep === 'verify' && (
-              <form onSubmit={handleVerifyResetOtp} className="space-y-4">
-                {/* Simulated Notification */}
-                <div className="bg-amber-50 border border-amber-300 p-3 rounded-2xl text-xs">
-                  <div className="flex items-center justify-between text-amber-900 font-bold mb-1">
-                    <span>{language === 'bn' ? 'ইমেইল কোড সিমুলেশন:' : 'Email Code Received:'}</span>
-                    <span className="font-mono bg-white px-2 py-0.5 rounded border border-amber-200 text-sm">
-                      {dispatchedOtp}
-                    </span>
+            ) : (
+              <form onSubmit={handleSaveNewPasswordDirect} className="space-y-3.5 text-xs">
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-2xl flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-blue-600 text-white font-bold text-xs flex items-center justify-center font-mono">
+                    {matchedResetUser.employeeId || 'ID'}
                   </div>
-                  <p className="text-[11px] text-amber-800">
-                    {language === 'bn' ? 'কোডটি নিচে লিখুন:' : 'Enter this code below to proceed:'}
-                  </p>
+                  <div>
+                    <div className="font-bold text-slate-900">{matchedResetUser.name}</div>
+                    <div className="text-[11px] text-blue-800">{matchedResetUser.designation || matchedResetUser.role}</div>
+                  </div>
                 </div>
 
                 <div>
-                  <input
-                    type="text"
-                    maxLength={6}
-                    required
-                    value={resetOtpCode}
-                    onChange={(e) => setResetOtpCode(e.target.value.replace(/\D/g, ''))}
-                    placeholder="• • • • • •"
-                    className="w-full text-center text-xl tracking-widest font-mono font-bold py-2.5 border border-slate-300 rounded-xl"
-                  />
-                  {otpError && <p className="text-xs text-rose-600 mt-1">{otpError}</p>}
+                  <label className="block font-semibold text-slate-700 mb-1">
+                    {language === 'bn' ? 'নতুন পাসওয়ার্ড (কমপক্ষে ৪ অক্ষর) *' : 'New Password (min 4 characters) *'}
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showResetPassword ? 'text' : 'password'}
+                      required
+                      minLength={4}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full px-3 py-2.5 pr-10 border border-slate-300 rounded-xl font-mono text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowResetPassword(!showResetPassword)}
+                      className="absolute right-3 top-3 text-slate-400 hover:text-slate-600"
+                    >
+                      {showResetPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
 
-                <div className="flex gap-2">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">
+                    {language === 'bn' ? 'নতুন পাসওয়ার্ড নিশ্চিত করুন *' : 'Confirm New Password *'}
+                  </label>
+                  <input
+                    type={showResetPassword ? 'text' : 'password'}
+                    required
+                    minLength={4}
+                    value={confirmNewPassword}
+                    onChange={(e) => setConfirmNewPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full px-3 py-2.5 border border-slate-300 rounded-xl font-mono text-sm"
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-2">
                   <button
                     type="button"
-                    onClick={() => setResetStep('input')}
-                    className="flex-1 py-2.5 border border-slate-200 text-slate-600 rounded-xl font-semibold cursor-pointer text-xs"
+                    onClick={() => setMatchedResetUser(null)}
+                    className="flex-1 py-2.5 border border-slate-200 text-slate-600 rounded-xl font-semibold cursor-pointer"
                   >
-                    {language === 'bn' ? 'পেছনে ফিরুন' : 'Back'}
+                    {language === 'bn' ? 'পেছনে' : 'Back'}
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold cursor-pointer text-xs"
+                    className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold cursor-pointer"
                   >
-                    {language === 'bn' ? 'কোড যাচাই করুন' : 'Verify Code'}
+                    {language === 'bn' ? 'নতুন পাসওয়ার্ড সংরক্ষণ করুন' : 'Save New Password'}
                   </button>
                 </div>
-              </form>
-            )}
-
-            {resetStep === 'new_password' && (
-              <form onSubmit={handleSaveNewPassword} className="space-y-3 text-xs">
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    {language === 'bn' ? 'নতুন পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর) *' : 'New Password *'}
-                  </label>
-                  <input
-                    type="password"
-                    required
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-xl"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    {language === 'bn' ? 'নতুন পাসওয়ার্ড পুনরায় লিখুন *' : 'Confirm New Password *'}
-                  </label>
-                  <input
-                    type="password"
-                    required
-                    value={confirmNewPassword}
-                    onChange={(e) => setConfirmNewPassword(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-xl"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold cursor-pointer text-xs"
-                >
-                  {language === 'bn' ? 'নতুন পাসওয়ার্ড সেভ করুন' : 'Save & Update Password'}
-                </button>
               </form>
             )}
           </div>
         )}
 
-        {/* MODE 4: REQUEST / ADD NEW ID FORM */}
+        {/* MODE 3: REQUEST / ADD NEW ID FORM */}
         {authMode === 'request_id' && (
           <div className="space-y-4">
             <div className="text-center mb-3">
@@ -1130,11 +963,17 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
           </div>
         )}
 
-        {/* Security footer */}
-        <div className="mt-6 pt-4 border-t border-slate-100 text-center text-[11px] text-slate-400">
-          {language === 'bn'
-            ? 'লিডো শিশু সুরক্ষা নীতিমালা • আইনি হেফাজত চেইন • কেন্দ্রীয় এইচআর এক্সেস নিয়ন্ত্রণ'
-            : 'Protected by LEEDO Child Safeguarding Policy • Legal Chain of Custody • HR Access Controls'}
+        {/* Security and Cloud Auto-Sync footer */}
+        <div className="mt-6 pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-400 gap-2">
+          <span>
+            {language === 'bn'
+              ? 'লিডো শিশু সুরক্ষা নীতিমালা • আইনি হেফাজত চেইন'
+              : 'Protected by LEEDO Child Safeguarding Policy'}
+          </span>
+          <div className="flex items-center gap-1.5 text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
+            <Cloud className="w-3 h-3 text-emerald-600" />
+            <span>{language === 'bn' ? 'ক্লাউড অটো-সিঙ্ক সক্রিয়' : 'Cloud Auto-Sync Active'}</span>
+          </div>
         </div>
       </div>
     </div>
