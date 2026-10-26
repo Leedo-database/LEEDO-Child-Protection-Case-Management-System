@@ -16,8 +16,11 @@ import { VocationalManagement } from './components/Vocational/VocationalManageme
 import { FourRWorkflow } from './components/Workflow/FourRWorkflow';
 import { ReferralManagement } from './components/Referral/ReferralManagement';
 import { GlobalSearchModal } from './components/Search/GlobalSearchModal';
+import { FaceScanSearchModal } from './components/Search/FaceScanSearchModal';
+import { AddRescueLogModal } from './components/Children/AddRescueLogModal';
 import { SystemManualModal } from './components/Manual/SystemManualModal';
 import { LoginView } from './components/Auth/LoginView';
+import { Child } from './types';
 import { Settings, Shield, RefreshCw, CloudUpload, Database, BookOpen } from 'lucide-react';
 
 const MainLayout: React.FC = () => {
@@ -35,7 +38,11 @@ const MainLayout: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [registerModalOpen, setRegisterModalOpen] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
+  const [faceScanModalOpen, setFaceScanModalOpen] = useState(false);
   const [manualModalOpen, setManualModalOpen] = useState(false);
+  const [addRescueChild, setAddRescueChild] = useState<Child | null>(null);
+  const [registerInitialPhoto, setRegisterInitialPhoto] = useState<string | undefined>();
+  const [registerInitialDescriptor, setRegisterInitialDescriptor] = useState<number[] | undefined>();
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     return sessionStorage.getItem('leedo_auth_active') === 'true';
   });
@@ -69,8 +76,13 @@ const MainLayout: React.FC = () => {
       {/* Top Navigation */}
       <Navbar
         onOpenMobileMenu={() => setMobileMenuOpen(true)}
-        onOpenRegisterModal={() => setRegisterModalOpen(true)}
+        onOpenRegisterModal={() => {
+          setRegisterInitialPhoto(undefined);
+          setRegisterInitialDescriptor(undefined);
+          setRegisterModalOpen(true);
+        }}
         onOpenSearchModal={() => setSearchModalOpen(true)}
+        onOpenFaceScan={() => setFaceScanModalOpen(true)}
         onOpenManualModal={() => setManualModalOpen(true)}
         onLogout={handleLogout}
       />
@@ -80,7 +92,11 @@ const MainLayout: React.FC = () => {
         <Sidebar
           mobileOpen={mobileMenuOpen}
           onCloseMobile={() => setMobileMenuOpen(false)}
-          onOpenRegisterModal={() => setRegisterModalOpen(true)}
+          onOpenRegisterModal={() => {
+            setRegisterInitialPhoto(undefined);
+            setRegisterInitialDescriptor(undefined);
+            setRegisterModalOpen(true);
+          }}
           onOpenManualModal={() => setManualModalOpen(true)}
         />
 
@@ -91,8 +107,13 @@ const MainLayout: React.FC = () => {
 
           {activeView === 'children' && (
             <ChildList
-              onOpenRegisterModal={() => setRegisterModalOpen(true)}
+              onOpenRegisterModal={() => {
+                setRegisterInitialPhoto(undefined);
+                setRegisterInitialDescriptor(undefined);
+                setRegisterModalOpen(true);
+              }}
               onSelectChild={handleSelectChild}
+              onOpenFaceScan={() => setFaceScanModalOpen(true)}
             />
           )}
 
@@ -116,8 +137,13 @@ const MainLayout: React.FC = () => {
 
           {activeView === 'family-tracing' && (
             <ChildList
-              onOpenRegisterModal={() => setRegisterModalOpen(true)}
+              onOpenRegisterModal={() => {
+                setRegisterInitialPhoto(undefined);
+                setRegisterInitialDescriptor(undefined);
+                setRegisterModalOpen(true);
+              }}
               onSelectChild={handleSelectChild}
+              onOpenFaceScan={() => setFaceScanModalOpen(true)}
             />
           )}
 
@@ -125,8 +151,13 @@ const MainLayout: React.FC = () => {
           {activeView === 'counseling' && <TasksAndAlerts />}
           {activeView === 'reintegration' && (
             <ChildList
-              onOpenRegisterModal={() => setRegisterModalOpen(true)}
+              onOpenRegisterModal={() => {
+                setRegisterInitialPhoto(undefined);
+                setRegisterInitialDescriptor(undefined);
+                setRegisterModalOpen(true);
+              }}
               onSelectChild={handleSelectChild}
+              onOpenFaceScan={() => setFaceScanModalOpen(true)}
             />
           )}
           {activeView === 'referral' && <ReferralManagement />}
@@ -138,8 +169,13 @@ const MainLayout: React.FC = () => {
 
           {activeView === 'documents' && (
             <ChildList
-              onOpenRegisterModal={() => setRegisterModalOpen(true)}
+              onOpenRegisterModal={() => {
+                setRegisterInitialPhoto(undefined);
+                setRegisterInitialDescriptor(undefined);
+                setRegisterModalOpen(true);
+              }}
               onSelectChild={handleSelectChild}
+              onOpenFaceScan={() => setFaceScanModalOpen(true)}
             />
           )}
 
@@ -226,15 +262,55 @@ const MainLayout: React.FC = () => {
       {/* Global Modals */}
       <RegisterChildModal
         isOpen={registerModalOpen}
-        onClose={() => setRegisterModalOpen(false)}
-        onRegistered={handleChildRegistered}
+        onClose={() => {
+          setRegisterModalOpen(false);
+          setRegisterInitialPhoto(undefined);
+          setRegisterInitialDescriptor(undefined);
+        }}
+        onRegistered={(id) => {
+          setRegisterInitialPhoto(undefined);
+          setRegisterInitialDescriptor(undefined);
+          handleChildRegistered(id);
+        }}
+        initialPhotoUrl={registerInitialPhoto}
+        initialFaceDescriptor={registerInitialDescriptor}
       />
 
       <GlobalSearchModal
         isOpen={searchModalOpen}
         onClose={() => setSearchModalOpen(false)}
         onSelectChild={handleSelectChild}
+        onOpenFaceScan={() => setFaceScanModalOpen(true)}
       />
+
+      {/* Face Recognition Biometric Search Modal */}
+      <FaceScanSearchModal
+        isOpen={faceScanModalOpen}
+        onClose={() => setFaceScanModalOpen(false)}
+        onSelectChild={(childId: string) => {
+          handleSelectChild(childId);
+          setFaceScanModalOpen(false);
+        }}
+        onOpenRegisterWithPhoto={(photoUrl: string, descriptor: number[]) => {
+          setRegisterInitialPhoto(photoUrl);
+          setRegisterInitialDescriptor(descriptor);
+          setFaceScanModalOpen(false);
+          setRegisterModalOpen(true);
+        }}
+        onOpenAddRescueLog={(child: Child) => {
+          setAddRescueChild(child);
+          setFaceScanModalOpen(false);
+        }}
+      />
+
+      {/* Quick Add Rescue Log Modal from Face Match */}
+      {addRescueChild && (
+        <AddRescueLogModal
+          isOpen={Boolean(addRescueChild)}
+          onClose={() => setAddRescueChild(null)}
+          child={addRescueChild}
+        />
+      )}
 
       <SystemManualModal
         isOpen={manualModalOpen}

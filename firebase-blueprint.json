@@ -49,9 +49,10 @@
         "shelterAdmissionDate": { "type": "string", "optional": true },
         "roomOrBed": { "type": "string", "optional": true },
         "assignedCaseWorker": { "type": "string" },
-        "caseWorkerPhone": { "type": "string", "optional": true },
         "caseStatus": { "type": "string" },
         "currentShelterStatus": { "type": "string" },
+        "faceDescriptor": { "type": "array", "optional": true },
+        "rescueHistory": { "type": "array", "optional": true },
         "timeline": { "type": "array" },
         "caseNotes": { "type": "array" }
       }

@@ -26,7 +26,8 @@ import {
   ThirdPartyShelter,
   StaffNotification,
   PeaceHomeProgressRecord,
-  PeaceHomeDepartureRecord
+  PeaceHomeDepartureRecord,
+  RescueLogEntry
 } from '../types';
 import { INITIAL_CHILDREN, INITIAL_AUDIT_LOGS, INITIAL_SUS_SESSIONS } from '../data/mockData';
 import { OFFICIAL_LEEDO_USERS, OFFICIAL_LEEDO_SHELTERS, INITIAL_VTC_STUDENTS } from '../data/officialRoster';
@@ -81,6 +82,7 @@ interface AppContextType {
   // Child Operations
   registerNewChild: (data: Partial<Child>) => string;
   updateChild: (id: string, updates: Partial<Child>, logDetails?: string) => void;
+  addRescueLogToChild: (childId: string, log: Omit<RescueLogEntry, 'id' | 'recordedAt'>) => void;
   transferToPeaceHome: (childId: string, roomOrBed?: string, notes?: string) => void;
   addCaseNote: (childId: string, note: string, isConfidential: boolean) => void;
   addHealthRecord: (childId: string, record: Omit<HealthRecord, 'id' | 'createdAt'>) => void;
@@ -792,6 +794,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
       referralFollowUps: [],
       leftWithoutNotice: undefined,
 
+      // Biometrics & Multi-Rescue History
+      faceDescriptor: data.faceDescriptor,
+      rescueHistory: data.rescueHistory || [],
+
       caseNotes: [
         {
           id: `note-${Date.now()}`,
@@ -888,6 +894,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
       })
     );
     addAuditEntry('UPDATE_CHILD_INFO', id, logDetails || `Updated child profile fields for ${id}`);
+  };
+
+  const addRescueLogToChild = (childId: string, logData: Omit<RescueLogEntry, 'id' | 'recordedAt'>) => {
+    const newEntry: RescueLogEntry = {
+      ...logData,
+      id: `rescue-${Date.now()}`,
+      recordedAt: new Date().toISOString(),
+    };
+
+    const newTimelineItem = {
+      id: `tl-${Date.now()}`,
+      date: logData.rescueDate || getTodayDateString(),
+      title: `নতুন রেসকিউ অবস্থান/লগ সংযোজিত (${logData.area})`,
+      description: `রেসকিউ স্থান: ${logData.rescueLocation} • রেসকিউ করেছেন: ${logData.rescuedBy || currentUser.name}${logData.gdNumber ? ` • GD: ${logData.gdNumber}` : ''}${logData.notes ? ` • বিবরণ: ${logData.notes}` : ''}`,
+      category: 'Rescue' as const,
+      actor: currentUser.name,
+    };
+
+    setChildrenList((prev) =>
+      prev.map((c) => {
+        if (c.id === childId) {
+          const updated: Child = {
+            ...c,
+            rescueHistory: [newEntry, ...(c.rescueHistory || [])],
+            timeline: [newTimelineItem, ...(c.timeline || [])],
+            updatedAt: new Date().toISOString(),
+          };
+          syncChildToCloud(childId, updated);
+          return updated;
+        }
+        return c;
+      })
+    );
+    addAuditEntry('ADD_RESCUE_LOG', childId, `Added new rescue location encounter for child ${childId} at ${logData.rescueLocation} (${logData.area})`);
   };
 
   const syncChildToCloud = (childId: string, updated: Child) => {
@@ -2412,6 +2452,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
 
         registerNewChild,
         updateChild,
+        addRescueLogToChild,
         transferToPeaceHome,
         addCaseNote,
         addHealthRecord,

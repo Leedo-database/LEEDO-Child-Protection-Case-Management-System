@@ -12,7 +12,9 @@ import {
   Clock, 
   FileSpreadsheet, 
   SlidersHorizontal,
-  X
+  X,
+  Scan,
+  Camera
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { getDaysInShelter, getSixWeekAlertStatus } from '../../utils/calculations';
@@ -21,11 +23,13 @@ import { CaseStatus, Gender } from '../../types';
 interface ChildListProps {
   onOpenRegisterModal: () => void;
   onSelectChild: (childId: string) => void;
+  onOpenFaceScan?: () => void;
 }
 
 export const ChildList: React.FC<ChildListProps> = ({
   onOpenRegisterModal,
   onSelectChild,
+  onOpenFaceScan,
 }) => {
   const { children, shelters, currentUser, branchFilter, setBranchFilter, language } = useApp();
 
@@ -311,6 +315,19 @@ export const ChildList: React.FC<ChildListProps> = ({
               </button>
             )}
           </div>
+
+          {/* Prominent Scan Face to Search Button */}
+          {onOpenFaceScan && (
+            <button
+              type="button"
+              onClick={onOpenFaceScan}
+              className="px-3.5 sm:px-4 py-2 bg-gradient-to-r from-[#E31B23] to-[#b3141a] hover:from-[#c9151d] hover:to-[#961015] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm hover:shadow-md transition-all active:scale-98 cursor-pointer shrink-0"
+              title={language === 'bn' ? 'ক্যামেরা দিয়ে শিশুর ফেস স্ক্যান করে খুঁজুন' : 'Scan Child Face to Search'}
+            >
+              <Scan className="w-4 h-4 animate-pulse" />
+              <span>{language === 'bn' ? 'ফেস স্ক্যান সার্চ' : 'Scan Face to Search'}</span>
+            </button>
+          )}
 
           {/* Quick Shelter Filter */}
           <select

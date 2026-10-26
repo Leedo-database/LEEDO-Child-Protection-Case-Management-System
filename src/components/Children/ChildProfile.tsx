@@ -56,6 +56,8 @@ import {
   AddPeaceHomeProgressModal, 
   RecordPeaceHomeDepartureModal 
 } from '../PeaceHome/PeaceHomeModals';
+import { QuickEditChildModal } from './QuickEditChildModal';
+import { AddRescueLogModal } from './AddRescueLogModal';
 import { CaseStatus } from '../../types';
 
 interface ChildProfileProps {
@@ -107,6 +109,8 @@ export const ChildProfile: React.FC<ChildProfileProps> = ({ childId, onBack }) =
   const [peaceHomeDepartureModalOpen, setPeaceHomeDepartureModalOpen] = useState(false);
   const [standardReportModalOpen, setStandardReportModalOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [editChildModalOpen, setEditChildModalOpen] = useState(false);
+  const [addRescueLogModalOpen, setAddRescueLogModalOpen] = useState(false);
   const [actionFeedbackMsg, setActionFeedbackMsg] = useState('');
 
   // Editable Status modal
@@ -367,7 +371,25 @@ export const ChildProfile: React.FC<ChildProfileProps> = ({ childId, onBack }) =
           </div>
 
           {/* Quick Action Button Group */}
-          <div className="flex md:flex-col gap-2 shrink-0 w-full md:w-auto no-print">
+          <div className="flex flex-wrap md:flex-col gap-2 shrink-0 w-full md:w-auto no-print">
+            <button
+              type="button"
+              onClick={() => setEditChildModalOpen(true)}
+              className="flex-1 md:flex-initial px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors shadow-xs cursor-pointer"
+              title={language === 'bn' ? 'শিশুর মৌলিক তথ্য বা ছবি হালনাগাদ করুন' : 'Update child personal details or photo'}
+            >
+              <Edit3 className="w-3.5 h-3.5" />
+              <span>{language === 'bn' ? 'তথ্য পরিবর্তন / এডিট' : 'Update Child Info'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setAddRescueLogModalOpen(true)}
+              className="flex-1 md:flex-initial px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors shadow-xs cursor-pointer"
+              title={language === 'bn' ? 'নতুন রেসকিউ স্পট বা উদ্ধারের ইতিহাস যোগ করুন' : 'Add new rescue encounter location / log'}
+            >
+              <MapPin className="w-3.5 h-3.5" />
+              <span>{language === 'bn' ? 'নতুন রেসকিউ স্পট/লগ' : 'Add Rescue Location'}</span>
+            </button>
             {isPeaceHome && (
               <button
                 onClick={() => setActiveTab('peace-home')}
@@ -1050,39 +1072,107 @@ export const ChildProfile: React.FC<ChildProfileProps> = ({ childId, onBack }) =
 
         {/* 3. RESCUE & POLICE GD TAB */}
         {activeTab === 'rescue' && (
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-base text-slate-900 font-display">Rescue Particulars & Police GD Documentation</h3>
-              <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-lg">
-                Verified Legal Rescue
-              </span>
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 className="font-bold text-base text-slate-900 font-display">Rescue Particulars & Police GD Documentation</h3>
+                <p className="text-xs text-slate-500">Primary rescue records and historical field encounter logs</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setAddRescueLogModalOpen(true)}
+                  className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
+                >
+                  <MapPin className="w-3.5 h-3.5" />
+                  <span>{language === 'bn' ? 'নতুন রেসকিউ স্পট যোগ' : 'Add Rescue Spot / Log'}</span>
+                </button>
+                <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-lg shrink-0">
+                  Verified Legal Rescue
+                </span>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
-              <div className="p-3 bg-slate-50 rounded-xl">
-                <span className="text-slate-400 block text-[10px] font-semibold uppercase">Rescue Date & Time</span>
-                <span className="font-bold text-slate-900">{child.rescueDate} at {child.rescueTime}</span>
+            {/* Primary Rescue Data */}
+            <div className="p-4 bg-slate-50/80 rounded-xl border border-slate-200/80 space-y-3">
+              <div className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                <span>Primary / Initial Admission Rescue Record</span>
               </div>
-              <div className="p-3 bg-slate-50 rounded-xl">
-                <span className="text-slate-400 block text-[10px] font-semibold uppercase">Rescue Hub Area</span>
-                <span className="font-bold text-slate-900">{child.area}</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+                <div className="p-3 bg-white rounded-lg border border-slate-200">
+                  <span className="text-slate-400 block text-[10px] font-semibold uppercase">Rescue Date & Time</span>
+                  <span className="font-bold text-slate-900">{child.rescueDate} at {child.rescueTime}</span>
+                </div>
+                <div className="p-3 bg-white rounded-lg border border-slate-200">
+                  <span className="text-slate-400 block text-[10px] font-semibold uppercase">Rescue Hub Area</span>
+                  <span className="font-bold text-slate-900">{child.area}</span>
+                </div>
+                <div className="p-3 bg-white rounded-lg border border-slate-200">
+                  <span className="text-slate-400 block text-[10px] font-semibold uppercase">Specific Spot</span>
+                  <span className="font-bold text-slate-900">{child.rescueLocation}</span>
+                </div>
+                <div className="p-3 bg-white rounded-lg border border-slate-200">
+                  <span className="text-slate-400 block text-[10px] font-semibold uppercase">Rescue Team</span>
+                  <span className="font-bold text-slate-900">{child.rescueTeam}</span>
+                </div>
+                <div className="p-3 bg-white rounded-lg border border-slate-200">
+                  <span className="text-slate-400 block text-[10px] font-semibold uppercase">Rescued By (Staff)</span>
+                  <span className="font-bold text-slate-900">{child.rescuedBy}</span>
+                </div>
+                <div className="p-3 bg-white rounded-lg border border-slate-200">
+                  <span className="text-slate-400 block text-[10px] font-semibold uppercase">Initial Condition</span>
+                  <span className="font-bold text-slate-900">{child.conditionAtRescue}</span>
+                </div>
               </div>
-              <div className="p-3 bg-slate-50 rounded-xl">
-                <span className="text-slate-400 block text-[10px] font-semibold uppercase">Specific Spot</span>
-                <span className="font-bold text-slate-900">{child.rescueLocation}</span>
+            </div>
+
+            {/* Historical Encounters / Multi-location Log (rescueHistory array) */}
+            <div className="space-y-3 pt-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <History className="w-4 h-4 text-indigo-600" />
+                  <h4 className="font-bold text-sm text-slate-900">
+                    {language === 'bn' ? 'অতিরিক্ত রেসকিউ বা উদ্ধার লগ' : 'Additional Rescue Encounters & Field Location History'}
+                  </h4>
+                  <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 rounded-full text-xs font-bold">
+                    {child.rescueHistory?.length || 0}
+                  </span>
+                </div>
               </div>
-              <div className="p-3 bg-slate-50 rounded-xl">
-                <span className="text-slate-400 block text-[10px] font-semibold uppercase">Rescue Team</span>
-                <span className="font-bold text-slate-900">{child.rescueTeam}</span>
-              </div>
-              <div className="p-3 bg-slate-50 rounded-xl">
-                <span className="text-slate-400 block text-[10px] font-semibold uppercase">Rescued By (Staff)</span>
-                <span className="font-bold text-slate-900">{child.rescuedBy}</span>
-              </div>
-              <div className="p-3 bg-slate-50 rounded-xl">
-                <span className="text-slate-400 block text-[10px] font-semibold uppercase">Initial Condition</span>
-                <span className="font-bold text-slate-900">{child.conditionAtRescue}</span>
-              </div>
+
+              {(!child.rescueHistory || child.rescueHistory.length === 0) ? (
+                <div className="p-4 bg-slate-50 text-slate-500 rounded-xl border border-dashed border-slate-300 text-center text-xs">
+                  {language === 'bn'
+                    ? 'এই শিশুর জন্য কোনো অতিরিক্ত রেসকিউ স্পট এখনও নেই। যদি শিশুটি পূর্বে অন্য কোনো স্পট থেকে উদ্ধার হয়ে থাকে বা পুনরায় মাঠে পাওয়া যায়, "নতুন রেসকিউ স্পট যোগ" বাটনে ক্লিক করুন।'
+                    : 'No additional rescue encounters recorded yet. If the child was rescued from another location or re-encountered in the field, append a log without creating duplicate profiles.'}
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {child.rescueHistory.map((log) => (
+                    <div key={log.id} className="p-4 bg-indigo-50/50 rounded-xl border border-indigo-200 text-xs space-y-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-indigo-950 text-sm">{log.rescueLocation}</span>
+                          <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 rounded font-semibold text-[10px]">{log.area}</span>
+                        </div>
+                        <span className="font-mono text-slate-500 text-[11px]">{log.rescueDate} {log.rescueTime ? `at ${log.rescueTime}` : ''}</span>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-slate-600 pt-1">
+                        <div>Team: <strong className="text-slate-800">{log.rescueTeam}</strong></div>
+                        <div>Officer: <strong className="text-slate-800">{log.rescuedBy}</strong></div>
+                        <div>Condition: <strong className="text-slate-800">{log.conditionAtRescue}</strong></div>
+                        {log.gdNumber && <div>GD: <strong className="text-rose-700 font-mono">{log.gdNumber}</strong></div>}
+                      </div>
+                      {log.notes && (
+                        <div className="text-slate-700 bg-white p-2.5 rounded-lg border border-indigo-100 mt-1">
+                          <strong>Incident / Location Details:</strong> {log.notes}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Police GD Box */}
@@ -1843,6 +1933,20 @@ export const ChildProfile: React.FC<ChildProfileProps> = ({ childId, onBack }) =
           );
           setTimeout(() => setActionFeedbackMsg(''), 5000);
         }}
+      />
+
+      {/* Quick Edit Child Info Modal */}
+      <QuickEditChildModal
+        isOpen={editChildModalOpen}
+        onClose={() => setEditChildModalOpen(false)}
+        child={child}
+      />
+
+      {/* Add New Rescue Location / Log Modal */}
+      <AddRescueLogModal
+        isOpen={addRescueLogModalOpen}
+        onClose={() => setAddRescueLogModalOpen(false)}
+        child={child}
       />
     </div>
   );

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, X, ChevronRight, User, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { Search, X, ChevronRight, User, AlertTriangle, ShieldCheck, Scan } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { getDaysInShelter, getSixWeekAlertStatus } from '../../utils/calculations';
 
@@ -7,12 +7,14 @@ interface GlobalSearchModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectChild: (childId: string) => void;
+  onOpenFaceScan?: () => void;
 }
 
 export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
   isOpen,
   onClose,
   onSelectChild,
+  onOpenFaceScan,
 }) => {
   const { children } = useApp();
   const [query, setQuery] = useState('');
@@ -85,6 +87,20 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({
               className="p-1 text-slate-400 hover:text-slate-600 rounded-lg mr-2"
             >
               <X className="w-4 h-4" />
+            </button>
+          )}
+          {onOpenFaceScan && (
+            <button
+              onClick={() => {
+                onClose();
+                onOpenFaceScan();
+              }}
+              className="mr-2 flex items-center gap-1.5 px-3 py-1.5 bg-[#E31B23] hover:bg-[#c9151d] text-white rounded-xl text-xs font-bold transition-all shadow-xs shrink-0 cursor-pointer"
+              title="Scan Face to Search / ফেস স্ক্যান করে খুঁজুন"
+            >
+              <Scan className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Scan Face</span>
+              <span className="sm:hidden">Face</span>
             </button>
           )}
           <button

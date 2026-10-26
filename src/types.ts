@@ -525,6 +525,25 @@ export interface DocumentItem {
   uploadedBy: string;
 }
 
+export interface RescueLogEntry {
+  id: string;
+  rescueDate: string;
+  rescueTime?: string;
+  rescueLocation: string;
+  area: string;
+  rescuedBy: string;
+  rescueTeam?: string;
+  reasonForRescue?: string;
+  conditionAtRescue?: string;
+  policeInvolvement?: boolean;
+  gdNumber?: string;
+  gdDate?: string;
+  policeStation?: string;
+  notes?: string;
+  photoUrl?: string;
+  recordedAt: string;
+}
+
 export interface TimelineEvent {
   id: string;
   date: string;
@@ -635,6 +654,10 @@ export interface Child {
   caseNotes: CaseNote[];
   documents: DocumentItem[];
   timeline: TimelineEvent[];
+
+  // Biometrics & Multi-Rescue History
+  faceDescriptor?: number[]; // 128-d facial biometric descriptor vector
+  rescueHistory?: RescueLogEntry[]; // Previous rescue encounters/logs
 
   // Meta
   createdAt: string;

@@ -14,18 +14,22 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { getTodayDateString } from '../../utils/calculations';
-import { ShelterName } from '../../types';
+import { extractFaceDescriptorFromImageUrl } from '../../utils/faceRecognition';
 
 interface RegisterChildModalProps {
   isOpen: boolean;
   onClose: () => void;
   onRegistered: (newChildId: string) => void;
+  initialPhotoUrl?: string | null;
+  initialFaceDescriptor?: number[] | null;
 }
 
 export const RegisterChildModal: React.FC<RegisterChildModalProps> = ({
   isOpen,
   onClose,
   onRegistered,
+  initialPhotoUrl,
+  initialFaceDescriptor,
 }) => {
   const { registerNewChild, shelters, currentUser } = useApp();
 
@@ -45,17 +49,34 @@ export const RegisterChildModal: React.FC<RegisterChildModalProps> = ({
   const [identificationInfo, setIdentificationInfo] = useState('');
   const [disabilityOrSpecialNeeds, setDisabilityOrSpecialNeeds] = useState('None');
   const [educationInformation, setEducationInformation] = useState('');
-  const [photoUrl, setPhotoUrl] = useState('');
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoUrl, setPhotoUrl] = useState(initialPhotoUrl || '');
+  const [photoPreview, setPhotoPreview] = useState<string | null>(initialPhotoUrl || null);
+  const [faceDescriptor, setFaceDescriptor] = useState<number[] | undefined>(initialFaceDescriptor || undefined);
+
+  // Sync when initialPhotoUrl changes
+  React.useEffect(() => {
+    if (initialPhotoUrl) {
+      setPhotoUrl(initialPhotoUrl);
+      setPhotoPreview(initialPhotoUrl);
+    }
+    if (initialFaceDescriptor && initialFaceDescriptor.length === 128) {
+      setFaceDescriptor(initialFaceDescriptor);
+    }
+  }, [initialPhotoUrl, initialFaceDescriptor]);
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
+      reader.onloadend = async () => {
         const result = reader.result as string;
         setPhotoPreview(result);
         setPhotoUrl(result);
+        // Automatically extract biometric vector from uploaded photo
+        const descriptor = await extractFaceDescriptorFromImageUrl(result);
+        if (descriptor) {
+          setFaceDescriptor(descriptor);
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -89,7 +110,7 @@ export const RegisterChildModal: React.FC<RegisterChildModalProps> = ({
   const [assessmentNotes, setAssessmentNotes] = useState('Child is calm and responsive to compassionate communication. Immediate shelter placement recommended.');
 
   // Step 4: Shelter Admission
-  const [shelterName, setShelterName] = useState<ShelterName>('Kamalapur Shelter');
+  const [shelterName, setShelterName] = useState<string>('Kamalapur Shelter');
   const [admissionDate, setAdmissionDate] = useState(today);
   const [admissionTime, setAdmissionTime] = useState('16:00');
   const [assignedCaseWorker, setAssignedCaseWorker] = useState(currentUser.name);
@@ -174,6 +195,7 @@ export const RegisterChildModal: React.FC<RegisterChildModalProps> = ({
       assignedCaseWorker,
       roomOrBed,
       caseStatus: 'New Rescue' as const,
+      faceDescriptor: faceDescriptor || undefined,
     };
 
     const newChildId = registerNewChild(newChildData);

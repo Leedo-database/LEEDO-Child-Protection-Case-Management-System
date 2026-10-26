@@ -15,7 +15,9 @@ import {
   BookOpen,
   Languages,
   LogOut,
-  UserCog
+  UserCog,
+  Scan,
+  Camera
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { LeedoLogo } from './LeedoLogo';
@@ -28,6 +30,7 @@ interface NavbarProps {
   onOpenRegisterModal: () => void;
   onOpenSearchModal: () => void;
   onOpenManualModal?: () => void;
+  onOpenFaceScan?: () => void;
   onLogout?: () => void;
 }
 
@@ -36,6 +39,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenRegisterModal,
   onOpenSearchModal,
   onOpenManualModal,
+  onOpenFaceScan,
   onLogout,
 }) => {
   const { 
@@ -192,10 +196,10 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Middle: Global Quick Search input on desktop */}
-        <div className="hidden md:flex flex-1 max-w-md mx-4">
+        <div className="hidden md:flex flex-1 max-w-lg mx-4 items-center gap-2">
           <button
             onClick={onOpenSearchModal}
-            className="w-full flex items-center justify-between px-3.5 py-2 text-sm text-slate-500 bg-slate-100 hover:bg-slate-200/80 border border-slate-200 rounded-lg transition-all text-left group"
+            className="flex-1 flex items-center justify-between px-3.5 py-2 text-sm text-slate-500 bg-slate-100 hover:bg-slate-200/80 border border-slate-200 rounded-lg transition-all text-left group"
           >
             <div className="flex items-center gap-2">
               <Search className="w-4 h-4 text-slate-400 group-hover:text-rose-600" />
@@ -205,6 +209,18 @@ export const Navbar: React.FC<NavbarProps> = ({
               ⌘K
             </kbd>
           </button>
+
+          {onOpenFaceScan && (
+            <button
+              type="button"
+              onClick={onOpenFaceScan}
+              className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-rose-600 to-indigo-600 hover:from-rose-700 hover:to-indigo-700 text-white text-xs font-semibold rounded-lg shadow-xs transition-all hover:shadow active:scale-95 shrink-0"
+              title={language === 'bn' ? 'ক্যামেরা দিয়ে ফেস স্ক্যান করে খুঁজুন' : 'Scan face with camera to find child profile'}
+            >
+              <Camera className="w-3.5 h-3.5" />
+              <span className="hidden lg:inline">{language === 'bn' ? 'ফেস স্ক্যান' : 'Face Scan'}</span>
+            </button>
+          )}
         </div>
 
         {/* Right side tools */}
@@ -230,6 +246,17 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             <Search className="w-5 h-5" />
           </button>
+
+          {onOpenFaceScan && (
+            <button
+              type="button"
+              onClick={onOpenFaceScan}
+              className="md:hidden p-2 text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-lg"
+              title={language === 'bn' ? 'ফেস স্ক্যান' : 'Face Scan'}
+            >
+              <Camera className="w-5 h-5" />
+            </button>
+          )}
 
           {/* New Rescue Registration button - Prominent as requested */}
           <button
