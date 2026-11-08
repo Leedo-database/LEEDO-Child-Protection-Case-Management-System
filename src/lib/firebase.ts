@@ -1,14 +1,34 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { initializeFirestore, getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 // Initialize Firebase SDK
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-// Use the dedicated firestore database ID provisioned for this application
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId || '(default)');
+// Use the dedicated firestore database ID provisioned for this application with ignoreUndefinedProperties: true
+export const db = initializeFirestore(app, {
+  ignoreUndefinedProperties: true,
+}, firebaseConfig.firestoreDatabaseId || '(default)');
 export const auth = getAuth(app);
+
+// Helper to remove any undefined values before writing to Firestore
+export function sanitizeForFirestore<T>(data: T): T {
+  if (data === null || data === undefined) return data;
+  if (Array.isArray(data)) {
+    return data.map(sanitizeForFirestore) as unknown as T;
+  }
+  if (typeof data === 'object') {
+    const cleaned: Record<string, unknown> = {};
+    for (const [key, val] of Object.entries(data as Record<string, unknown>)) {
+      if (val !== undefined) {
+        cleaned[key] = sanitizeForFirestore(val);
+      }
+    }
+    return cleaned as T;
+  }
+  return data;
+}
 
 // Test connection on boot
 (async function testConnection() {

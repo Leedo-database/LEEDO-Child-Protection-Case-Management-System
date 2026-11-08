@@ -104,6 +104,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
 
     setCurrentUser(u);
     localStorage.setItem('leedo_session_logged_in', 'true');
+    sessionStorage.setItem('leedo_auth_active', 'true');
     onLoginSuccess();
   };
 
@@ -172,6 +173,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
     setSelectedUser(matched);
     setCurrentUser(matched);
     localStorage.setItem('leedo_session_logged_in', 'true');
+    sessionStorage.setItem('leedo_auth_active', 'true');
     onLoginSuccess();
   };
 
@@ -179,7 +181,10 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
     e.preventDefault();
     setFirstLoginError('');
 
-    if (!firstLoginNewPassword || firstLoginNewPassword.length < 4) {
+    const cleanPass = firstLoginNewPassword.trim();
+    const cleanConfirm = firstLoginConfirmPassword.trim();
+
+    if (!cleanPass || cleanPass.length < 4) {
       setFirstLoginError(
         language === 'bn'
           ? 'পাসওয়ার্ডটি কমপক্ষে ৪ অক্ষরের হতে হবে।'
@@ -188,7 +193,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
       return;
     }
 
-    if (firstLoginNewPassword !== firstLoginConfirmPassword) {
+    if (cleanPass !== cleanConfirm) {
       setFirstLoginError(
         language === 'bn'
           ? 'উভয় পাসওয়ার্ডের মিল পাওয়া যায়নি।'
@@ -197,17 +202,40 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
       return;
     }
 
-    if (!pendingFirstLoginUser) return;
+    // Defensive target user resolution
+    const cleanInput = identifier.trim().toLowerCase();
+    const cleanDigits = cleanInput.replace(/\D/g, '');
+    const targetUser = pendingFirstLoginUser || selectedUser || users.find(u => {
+      const uEmp = (u.employeeId || '').toLowerCase();
+      const uId = u.id.toLowerCase();
+      const uDigits = (u.employeeId || '').replace(/\D/g, '');
+      return uEmp === cleanInput || uId === cleanInput || (cleanDigits.length > 0 && uDigits === cleanDigits);
+    });
 
-    changeUserPassword(pendingFirstLoginUser.id, firstLoginNewPassword);
+    if (!targetUser) {
+      setFirstLoginError(
+        language === 'bn'
+          ? 'কর্মকর্তার রেকর্ড শনাক্ত করা যায়নি। অনুগ্রহ করে পুনরায় এমপ্লয়ি আইডি দিন।'
+          : 'Unable to identify staff record. Please return and re-enter Employee ID.'
+      );
+      return;
+    }
 
-    const updatedUser = {
-      ...pendingFirstLoginUser,
-      password: firstLoginNewPassword,
+    try {
+      changeUserPassword(targetUser.id, cleanPass);
+    } catch (err) {
+      console.warn('Password change background sync error:', err);
+    }
+
+    const updatedUser: User = {
+      ...targetUser,
+      password: cleanPass,
       hasCustomPassword: true
     };
+
     setCurrentUser(updatedUser);
     localStorage.setItem('leedo_session_logged_in', 'true');
+    sessionStorage.setItem('leedo_auth_active', 'true');
     onLoginSuccess();
   };
 
@@ -974,6 +1002,10 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
             <Cloud className="w-3 h-3 text-emerald-600" />
             <span>{language === 'bn' ? 'ক্লাউড অটো-সিঙ্ক সক্রিয়' : 'Cloud Auto-Sync Active'}</span>
           </div>
+        </div>
+
+        <div className="mt-3 text-center text-[10px] text-slate-400/80 font-mono tracking-wide">
+          developed by shadowgili
         </div>
       </div>
     </div>

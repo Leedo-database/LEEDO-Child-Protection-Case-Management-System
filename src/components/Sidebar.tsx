@@ -221,6 +221,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {language === 'bn' ? 'অনলাইন' : 'Online'}
             </span>
           </div>
+
+          <div className="text-[9px] text-slate-400 text-center mt-2 pt-2 border-t border-slate-200/60 font-mono tracking-wide">
+            developed by shadowgili
+          </div>
         </div>
       </aside>
     </>

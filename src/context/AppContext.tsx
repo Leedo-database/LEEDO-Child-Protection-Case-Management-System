@@ -43,7 +43,7 @@ import {
   canUserAccessVTC, 
   getUserAssignedAreasList 
 } from '../utils/areaPermissions';
-import { db, handleFirestoreError, OperationType } from '../lib/firebase';
+import { db, handleFirestoreError, OperationType, sanitizeForFirestore } from '../lib/firebase';
 import { collection, doc, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 
 interface AppContextType {
@@ -701,17 +701,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
   }, [vtcStudents]);
 
   const addAuditEntry = (action: string, childId?: string, details: string = '') => {
-    const newEntry: AuditEntry = {
-      id: `audit-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
-      user: currentUser.name,
-      role: currentUser.role,
-      action,
-      childId,
-      details,
-    };
-    setAuditLogs((prev) => [newEntry, ...prev]);
-    setDoc(doc(db, 'auditLogs', newEntry.id), newEntry, { merge: true }).catch(() => {});
+    try {
+      const newEntry: AuditEntry = {
+        id: `audit-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+        user: currentUser?.name || 'Staff User',
+        role: currentUser?.role || 'Field Officer / Case Worker',
+        action,
+        ...(childId ? { childId } : {}),
+        details: details || '',
+      };
+      setAuditLogs((prev) => [newEntry, ...prev]);
+      try {
+        setDoc(doc(db, 'auditLogs', newEntry.id), sanitizeForFirestore(newEntry), { merge: true }).catch(() => {});
+      } catch (err) {
+        console.warn('audit setDoc error:', err);
+      }
+    } catch (e) {
+      console.warn('addAuditEntry error:', e);
+    }
   };
 
   // Generate unique sequential Child ID e.g. LEEDO-2026-0008
@@ -2162,24 +2170,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children:
 
   // Password Management Operations
   const changeUserPassword = (userId: string, newPass: string): boolean => {
-    if (!newPass || newPass.trim().length < 4) {
+    try {
+      if (!newPass || newPass.trim().length < 4) {
+        return false;
+      }
+      const cleanPass = newPass.trim();
+      let targetUser: User | null = null;
+      setUsersList((prev) =>
+        prev.map((u) => {
+          if (u.id === userId || (u.employeeId && u.employeeId === userId)) {
+            const updated: User = { ...u, password: cleanPass, hasCustomPassword: true };
+            targetUser = updated;
+            try {
+              setDoc(doc(db, 'users', u.id), sanitizeForFirestore(updated), { merge: true }).catch((e) => console.warn('Cloud pass sync:', e));
+            } catch (err) {
+              console.warn('User pass write error:', err);
+            }
+            return updated;
+          }
+          return u;
+        })
+      );
+      if (targetUser) {
+        setCurrentUser(targetUser);
+        try {
+          localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(targetUser));
+        } catch (e) { /* ignore */ }
+      }
+      addAuditEntry('PASSWORD_CHANGED', undefined, `Staff member (${userId}) successfully updated their personal secret password`);
+      return true;
+    } catch (err) {
+      console.warn('changeUserPassword error:', err);
       return false;
     }
-    setUsersList((prev) =>
-      prev.map((u) => {
-        if (u.id === userId || (u.employeeId && u.employeeId === userId)) {
-          const updated = { ...u, password: newPass.trim(), hasCustomPassword: true };
-          setDoc(doc(db, 'users', u.id), updated, { merge: true }).catch((e) => console.warn('Cloud pass sync:', e));
-          if (currentUser.id === u.id) {
-            setCurrentUser(updated);
-          }
-          return updated;
-        }
-        return u;
-      })
-    );
-    addAuditEntry('PASSWORD_CHANGED', undefined, `Staff member (${userId}) successfully updated their personal secret password`);
-    return true;
   };
 
   const resetUserPassword = (userId: string): boolean => {

@@ -44,15 +44,18 @@ const MainLayout: React.FC = () => {
   const [registerInitialPhoto, setRegisterInitialPhoto] = useState<string | undefined>();
   const [registerInitialDescriptor, setRegisterInitialDescriptor] = useState<number[] | undefined>();
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    return sessionStorage.getItem('leedo_auth_active') === 'true';
+    return localStorage.getItem('leedo_session_logged_in') === 'true' || 
+           sessionStorage.getItem('leedo_auth_active') === 'true';
   });
 
   const handleLoginSuccess = () => {
+    localStorage.setItem('leedo_session_logged_in', 'true');
     sessionStorage.setItem('leedo_auth_active', 'true');
     setIsLoggedIn(true);
   };
 
   const handleLogout = () => {
+    localStorage.removeItem('leedo_session_logged_in');
     sessionStorage.removeItem('leedo_auth_active');
     setIsLoggedIn(false);
   };
@@ -247,7 +250,7 @@ const MainLayout: React.FC = () => {
                     <p className="text-slate-500">Exit current session and return to organizational login screen</p>
                   </div>
                   <button
-                    onClick={() => setIsLoggedIn(false)}
+                    onClick={handleLogout}
                     className="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl font-semibold transition-colors cursor-pointer"
                   >
                     Sign Out
@@ -256,6 +259,11 @@ const MainLayout: React.FC = () => {
               </div>
             </div>
           )}
+
+          {/* Bottom subtle copyright / developer mark */}
+          <footer className="mt-8 pt-4 pb-2 text-center text-[11px] text-slate-400 font-mono tracking-wide">
+            developed by shadowgili
+          </footer>
         </main>
       </div>
 

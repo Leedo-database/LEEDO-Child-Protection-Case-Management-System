@@ -48,7 +48,7 @@ export const AddPeaceHomeProgressModal: React.FC<AddProgressModalProps> = ({
   // Detect appropriate default author role
   const defaultRole = (() => {
     const des = (currentUser.designation || '').toLowerCase();
-    const name = currentUser.name.toLowerCase();
+    const name = (currentUser.name || '').toLowerCase();
     if (des.includes('manager') || name.includes('sohel')) return 'Manager Peace Home';
     if (des.includes('mother') || name.includes('parvin') || name.includes('parveen')) return 'Peace Home Mother';
     if (des.includes('counselor') || des.includes('psycho') || name.includes('nargis')) return 'Psychosocial Counselor';

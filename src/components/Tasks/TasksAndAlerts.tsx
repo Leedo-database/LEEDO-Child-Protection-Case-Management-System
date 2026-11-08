@@ -34,21 +34,21 @@ export const TasksAndAlerts: React.FC = () => {
   const [filterType, setFilterType] = useState<'all' | 'staff-tasks' | 'six-week' | 'health' | 'counseling' | 'follow-up'>('all');
 
   // Filter staff notifications for current user
-  const isCounselor = currentUser.id === 'emp-1017' || 
-                      currentUser.name.toLowerCase().includes('nargis') || 
-                      currentUser.designation?.toLowerCase().includes('psycho-social') ||
-                      currentUser.designation?.toLowerCase().includes('counselor');
+  const isCounselor = currentUser?.id === 'emp-1017' || 
+                      (currentUser?.name || '').toLowerCase().includes('nargis') || 
+                      currentUser?.designation?.toLowerCase().includes('psycho-social') ||
+                      currentUser?.designation?.toLowerCase().includes('counselor');
 
-  const isCoordinator = currentUser.role === 'Program Coordinator' ||
-                        currentUser.designation?.toLowerCase().includes('coordinator');
+  const isCoordinator = currentUser?.role === 'Program Coordinator' ||
+                        currentUser?.designation?.toLowerCase().includes('coordinator');
 
   const userStaffNotifications = notifications.filter((notif) => {
-    if (notif.targetUserId && notif.targetUserId === currentUser.id) return true;
+    if (notif.targetUserId && notif.targetUserId === currentUser?.id) return true;
     if (notif.type === 'COUNSELING_TASK' && isCounselor) return true;
     if (notif.type === 'NEW_RESCUE_VERIFICATION' && isCoordinator) return true;
-    if (notif.targetRole && notif.targetRole === currentUser.role) return true;
-    if (notif.targetDesignation && currentUser.designation && notif.targetDesignation.toLowerCase().includes(currentUser.designation.toLowerCase())) return true;
-    if (currentUser.role === 'Super Admin' || currentUser.designation?.includes('Kanta') || currentUser.email === 'leedo.kanta@gmail.com') return true;
+    if (notif.targetRole && notif.targetRole === currentUser?.role) return true;
+    if (notif.targetDesignation && currentUser?.designation && notif.targetDesignation.toLowerCase().includes(currentUser.designation.toLowerCase())) return true;
+    if (currentUser?.role === 'Super Admin' || currentUser?.designation?.includes('Kanta') || currentUser?.email === 'leedo.kanta@gmail.com') return true;
     return false;
   });
 
